@@ -1,0 +1,9 @@
+
+fun prueba(hola1, hola2) {
+    var outerLocal = 5;
+
+    fun innerPrueba() {
+        var innerLocal = outerLocal;
+    }
+
+}
