@@ -74,6 +74,11 @@ class CompiscriptVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CompiscriptParser#funAnon.
+    def visitFunAnon(self, ctx:CompiscriptParser.FunAnonContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CompiscriptParser#expression.
     def visitExpression(self, ctx:CompiscriptParser.ExpressionContext):
         return self.visitChildren(ctx)
@@ -111,6 +116,16 @@ class CompiscriptVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#factor.
     def visitFactor(self, ctx:CompiscriptParser.FactorContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#array.
+    def visitArray(self, ctx:CompiscriptParser.ArrayContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#instantiation.
+    def visitInstantiation(self, ctx:CompiscriptParser.InstantiationContext):
         return self.visitChildren(ctx)
 
 

@@ -125,6 +125,15 @@ class CompiscriptListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CompiscriptParser#funAnon.
+    def enterFunAnon(self, ctx:CompiscriptParser.FunAnonContext):
+        pass
+
+    # Exit a parse tree produced by CompiscriptParser#funAnon.
+    def exitFunAnon(self, ctx:CompiscriptParser.FunAnonContext):
+        pass
+
+
     # Enter a parse tree produced by CompiscriptParser#expression.
     def enterExpression(self, ctx:CompiscriptParser.ExpressionContext):
         pass
@@ -194,6 +203,24 @@ class CompiscriptListener(ParseTreeListener):
 
     # Exit a parse tree produced by CompiscriptParser#factor.
     def exitFactor(self, ctx:CompiscriptParser.FactorContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiscriptParser#array.
+    def enterArray(self, ctx:CompiscriptParser.ArrayContext):
+        pass
+
+    # Exit a parse tree produced by CompiscriptParser#array.
+    def exitArray(self, ctx:CompiscriptParser.ArrayContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiscriptParser#instantiation.
+    def enterInstantiation(self, ctx:CompiscriptParser.InstantiationContext):
+        pass
+
+    # Exit a parse tree produced by CompiscriptParser#instantiation.
+    def exitInstantiation(self, ctx:CompiscriptParser.InstantiationContext):
         pass
 
 

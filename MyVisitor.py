@@ -1,6 +1,6 @@
 from CompiscriptParser import CompiscriptParser
 from CompiscriptVisitor import CompiscriptVisitor
-from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType
+from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType
 
 def determine_type(value):
         if isinstance(value, int) or isinstance(value, float):
@@ -35,7 +35,54 @@ class MyVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#classDecl.
     def visitClassDecl(self, ctx:CompiscriptParser.ClassDeclContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de declaración de clase')
+        class_name = ctx.IDENTIFIER(0).getText()
+        superclass = None
+        
+        # Si hay una superclase, resolverla
+        if ctx.IDENTIFIER(1):
+            superclass_name = ctx.IDENTIFIER(1).getText()
+            print('Supeclase encontrada: ', superclass_name)
+            superclass = self.symbol_table.lookup(superclass_name)
+            
+            if not superclass:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la superclase {superclass_name} no ha sido declarada")
+            
+            elif not isinstance(superclass.type, ClassType):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: {superclass_name} no es una clase")
+                superclass = None
+                
+        # Crear un nuevo ámbito para la clase
+        self.symbol_table.enter_scope()
+        
+        # Crear el tipo de la clase
+        class_type = ClassType(class_name, superclass.type if superclass else None)
+        
+        # Agregar la clase a la tabla de símbolos (Esto solo para que se pueda hacer referencia a la clase dentro de la misma)
+        # Posteriormente, se actualizará con los métodos y atributos de la clase
+        
+        self.symbol_table.add('this', class_type)
+        
+        # Agregar métodos a la clase
+        for method in ctx.function():
+            method_name, method_type = self.visit(method)
+            class_type.add_method(method_name, method_type)
+            
+        # Los hijos pudieron haber agregado campos a la clase, por lo que se obtiene nuevamente de la tabla de símbolos
+        updated_class = self.symbol_table.lookup('this')
+        
+        # Agregar campos a la clase
+        class_type.fields = updated_class.type.fields
+        
+        # Salir del ámbito de la clase
+        self.symbol_table.exit_scope()
+        
+        # Agregar la clase actualizada a la tabla de símbolos
+        self.symbol_table.add(class_name, class_type)
+        
+        print(f"Clase {class_name} con superclase {superclass.type if superclass else None} y tipo {class_type} declarada")
+        
+        return class_name, class_type
 
 
     # Visit a parse tree produced by CompiscriptParser#funDecl.
@@ -56,6 +103,10 @@ class MyVisitor(CompiscriptVisitor):
         else:
             # Crear un símbolo para la función
             symbol = self.symbol_table.add(function_name, function_type)
+            
+            current_class = self.symbol_table.lookup('this')
+            if current_class:
+                current_class.add_method(function_name, function_type)
         
         return symbol
 
@@ -77,8 +128,9 @@ class MyVisitor(CompiscriptVisitor):
             var_value, var_type, _ = self.visit(ctx.expression())
             
             # Crear un símbolo para la variable
-            symbol = self.symbol_table.add(var_name, var_type, var_value)
-            print(f"Variable {var_name} de tipo {var_type} y valor {var_value} declarada")
+            if var_type is not None:
+                symbol = self.symbol_table.add(var_name, var_type, var_value)
+                print(f"Variable {var_name} de tipo {var_type} y valor {var_value} declarada")
         
         return var_type
 
@@ -150,17 +202,26 @@ class MyVisitor(CompiscriptVisitor):
         var_value = None
         var_type = NilType()
         
-        var_value, var_type, var_name = self.visitChildren(ctx)
         
-        print('Asignación: Hijo obtenido: ', var_value)
-        
-        var_name_node = ctx.IDENTIFIER()  # Intenta obtener el nodo del identificador
-        
-        print('Asignación: Nombre variable: ', var_name_node)
+        call_node = ctx.call()  # Intenta obtener el nodo de llamada a función
     
-        if var_name_node is not None: # (Se está repitiendo la asignación)
+        if ctx.IDENTIFIER(): # Ya se obtuvo el valor a asignar
             
-            var_name = var_name_node.getText()
+            var_name = ctx.IDENTIFIER().getText()
+            
+            if call_node is not None: # Se está llamando a una función o a una propiedad de una clase
+                
+                # Obtener el valor de retorno de call
+                call_value, call_type, call_name = self.visit(call_node)
+                
+                print(f"Valor de retorno de la llamada a función: {call_name}")
+                
+                if call_name == 'this': # Se está haciendo referencia a un método o field de la clase actual
+                    current_class = self.symbol_table.lookup('this')
+                    current_class.type.add_field(var_name, NilType())
+                    print(current_class)
+                    
+                return var_value, var_type, var_name
             
             # Buscar la variable en la tabla de símbolos
             symbol = self.symbol_table.lookup(var_name)
@@ -170,10 +231,18 @@ class MyVisitor(CompiscriptVisitor):
                 
             else:
                 
+                # Obtener el valor y tipo de la variable de la siguiente asignación
+                
+                var_value, var_type, _ = self.visit(ctx.assignment())
+                
                 # Determinar el tipo del valor que está siendo asignado
                 symbol.type = var_type
                 symbol.value = var_value
                 print(f"Variable {var_name} de tipo {var_type} asignada con valor {var_value}")
+                
+        else: # Se sigue con logic_or
+            
+            var_value, var_type, var_name = self.visit(ctx.logic_or())
             
         return var_value, var_type, var_name
 
@@ -206,6 +275,34 @@ class MyVisitor(CompiscriptVisitor):
     # Visit a parse tree produced by CompiscriptParser#factor.
     def visitFactor(self, ctx:CompiscriptParser.FactorContext):
         return self.visitChildren(ctx)
+    
+    # Visit a parse tree produced by CompiscriptParser#array.
+    def visitArray(self, ctx:CompiscriptParser.ArrayContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#instantiation.
+    def visitInstantiation(self, ctx:CompiscriptParser.InstantiationContext):
+        # Obtener el nombre de la clase
+        print('Visita al nodo de instanciación')
+        class_name = ctx.IDENTIFIER().getText()
+        
+        # Verificar si la clase ha sido declarada
+        class_symbol = self.symbol_table.lookup(class_name)
+        
+        if not class_symbol:
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {class_name} no ha sido declarada")
+            return None, None, None
+        
+        arguments = []
+        if ctx.arguments():
+            for arg in ctx.arguments():
+                arguments = self.visit(arg)
+        
+        # Crear una instancia de la clase
+        instance = InstanceType(class_symbol.type, arguments)
+        
+        return None, instance, None
 
 
     # Visit a parse tree produced by CompiscriptParser#unary.
@@ -217,13 +314,30 @@ class MyVisitor(CompiscriptVisitor):
     def visitCall(self, ctx:CompiscriptParser.CallContext):
         print("Visita al nodo de llamada a función")
 
-        # Obtener el nombre de la función llamada
+        # Obtener el nombre de primary
         value, type, name = self.visit(ctx.primary())
         
         print(ctx.getText())
         
-        # Si primary_result[1] es None, o no hay () en el texto, significa que no se trata de una función
-        if '(' not in ctx.getText():
+        if value == 'this': # Se está llamando a un método o field de la clase actual
+            
+            # Verificar si existe dicha clase actual (this)
+            current_class = self.symbol_table.lookup("this")
+            
+            if not current_class:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+                return None, None, None
+            
+        if '.' in ctx.getText(): # Se está llamando a un método o field de una clase
+            # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
+            # únicamente se asume que el valor de retorno es de tipo 'nil'
+            return None, NilType(), name
+        
+        if type is None: # No acarrear errores semánticos
+            return None, None, None
+        
+        # Si no hay () en el texto, significa que no se trata de una función
+        if '(' not in ctx.getText() or isinstance(type, InstanceType):
             return value, type, name
         
         if not isinstance(type, FunctionType):
@@ -268,19 +382,50 @@ class MyVisitor(CompiscriptVisitor):
                 value = ctx.STRING().getText()
                 type = StringType()
                 
-            elif ctx.getText() == 'nil':
-                value = None
-                type = NilType()
+        elif ctx.getText() == 'nil':
+            value = None
+            type = NilType()
+        
+        elif ctx.getText() == 'true':
+            value = True
+            type = BooleanType()
             
-            elif ctx.getText() == 'true':
-                value = True
-                type = BooleanType()
-                
-            elif ctx.getText() == 'false':
-                value = False
-                type = BooleanType()
+        elif ctx.getText() == 'false':
+            value = False
+            type = BooleanType()
+            
+        elif ctx.getText() == 'this':
+            value = 'this'
+            type = ClassType('this')
+            var_name = 'this'
+            
+        elif ctx.instantiation(): # Si es una instancia
+            print('Primary reconoce instancia')
+            value, type, var_name = self.visit(ctx.instantiation())
+            
+        elif ctx.getText().startswith('super.'):
+            print('Visita al nodo de super')
+            # Encontrar la clase actual
+            current_class = self.symbol_table.lookup('this').type
+            if not current_class or not current_class.superclass:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase o la clase no tiene superclase.")
+                return None, None, None
+
+            # Obtener el método de la superclase
+            method_name = ctx.IDENTIFIER().getText()
+            superclass = current_class.superclass
+            method = superclass.get_method(method_name)
+            print('Tipo del Método encontrado: ', method)
+
+            if not method:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método {method_name} no existe en la superclase {superclass.name}.")
+                return None, None, None
+
+            print(f"Llamada al método {method_name} en superclase {superclass.name}.")
+            return None, method.return_type, method_name
                 
         elif ctx.IDENTIFIER(): # Si es un identificador
+            print('Lo reconoce como identificador')
             var_name = ctx.IDENTIFIER().getText()
             symbol = self.symbol_table.lookup(var_name)
             
