@@ -1,9 +1,30 @@
 
 fun prueba(hola1, hola2) {
     var outerLocal = 5;
+    var outerLocal2 = "hola";
 
-    fun innerPrueba() {
-        var innerLocal = outerLocal;
+    fun innerPrueba(hola3) {
+        var innerLocal = hola3;
+
+        fun mostInnerPrueba() {
+            var mostInnerLocal = "wenas";
+
+            return mostInnerLocal;
+        }
+
+        fun mostInnerPrueba(wow) {
+            var jeje = 1;
+
+            return jeje;
+        }
+
+        return innerLocal;
     }
 
+    return outerLocal;
+
 }
+
+var argumento1 = 1;
+
+var prueba_llamada = prueba(argumento1, argumento2);
