@@ -246,8 +246,7 @@ class MyVisitor(CompiscriptVisitor):
         
         # Verificar que la condición sea de tipo booleano
         if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
-            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
-            return None
+            print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
         
         # Visitar bloque de código
         
@@ -296,7 +295,7 @@ class MyVisitor(CompiscriptVisitor):
         
         # Verificar que la condición sea de tipo booleano
         if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
-            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
+            print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
             
         # Visitar el cuerpo del bucle
         self.visit(ctx.statement())
@@ -434,7 +433,7 @@ class MyVisitor(CompiscriptVisitor):
             
             # Validar si los tipos son compatibles
             if not types_are_compatible(normalized_left_type, normalized_right_type):
-                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
+                print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
                 return None, NilType(), None
             
             # Realizar la operación de igualdad o desigualdad
@@ -443,7 +442,7 @@ class MyVisitor(CompiscriptVisitor):
             else:
                 left_value = left_value != right_value
                 
-            left_type = {BooleanType()}  # El resultado de una igualdad es siempre booleano
+            left_type = BooleanType()  # El resultado de una igualdad es siempre booleano
             
         return left_value, left_type, left_name
 
@@ -462,7 +461,7 @@ class MyVisitor(CompiscriptVisitor):
             
             # Validar si los tipos son numéricos
             if not types_are_numeric(normalized_left_type, normalized_right_type):
-                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
+                print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
                 return None, NilType(), None
             
             # Realizar la operación de comparación
@@ -475,7 +474,7 @@ class MyVisitor(CompiscriptVisitor):
             elif '>=' in ctx.getText():
                 left_value = left_value >= right_value
                     
-            left_type = {BooleanType()}  # El resultado de una comparación es siempre booleano
+            left_type = BooleanType()  # El resultado de una comparación es siempre booleano
             
         return left_value, left_type, left_name
 
@@ -507,13 +506,13 @@ class MyVisitor(CompiscriptVisitor):
                     left_value = str(left_value) + str(right_value)
                     
                 else:
-                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
+                    print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
                     return None, NilType(), None
                 
             elif operator == '-':
                 
                 if not types_are_numeric(left_type, right_type):
-                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una resta deben ser numéricos")
+                    print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una resta deben ser numéricos")
                     return None, NilType(), None
                 
                 if left_value is not None and right_value is not None:
@@ -530,6 +529,8 @@ class MyVisitor(CompiscriptVisitor):
         
         left_value, left_type, left_name = self.visit(ctx.unary(0))
         
+        print('Valor de retorno de unary: ', left_value)
+        
         for i in range(1, len(ctx.unary())):
 
             right_value, right_type, right_name = self.visit(ctx.unary(i))
@@ -538,7 +539,7 @@ class MyVisitor(CompiscriptVisitor):
             
             # Validar si los tipos son numéricos
             if not types_are_numeric(left_type, right_type):
-                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
+                print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
                 return None, NilType(), None
             
             if left_value is not None and right_value is not None:
@@ -577,8 +578,7 @@ class MyVisitor(CompiscriptVisitor):
         
         arguments = []
         if ctx.arguments():
-            for arg in ctx.arguments():
-                arguments = self.visit(arg)
+            arguments = self.visit(ctx.arguments())
         
         # Crear una instancia de la clase
         instance = InstanceType(class_symbol.type, arguments)
@@ -635,9 +635,13 @@ class MyVisitor(CompiscriptVisitor):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
                 return None, None, None
             
-        if '.' in ctx.getText(): # Se está llamando a un método o field de una clase
+        if '.' in ctx.getText() and not isinstance(type, NumberType): # Se está llamando a un método o field de una clase
             # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
-            # únicamente se asume que el valor de retorno es de tipo 'nil'
+            # únicamente se asume que el valor de retorno es de tipo 'nil' y advertir si se trata de una inatancia
+            
+            if not isinstance(type, InstanceType):
+                print(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
+            
             return None, NilType(), name
         
         if type is None: # No acarrear errores semánticos
