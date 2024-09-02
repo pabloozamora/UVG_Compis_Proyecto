@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/compile': 'http://127.0.0.1:5000',
+      '/analyze': 'http://127.0.0.1:5000',
     },
   },
 })

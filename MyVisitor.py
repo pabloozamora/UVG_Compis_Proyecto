@@ -60,9 +60,13 @@ class MyVisitor(CompiscriptVisitor):
     def __init__(self):
         self.symbol_table = ListSymbolTable()
         self.return_types = set()
+        self.result = []
+        
+    def getResult(self):
+        return self.result
     
     def visitProgram(self, ctx:CompiscriptParser.ProgramContext):
-        print('Visita al nodo de inicio del programa')
+        print('\n---INICIA EJECUCIÓN---\n')
         self.symbol_table.enter_scope()
         result = self.visitChildren(ctx)
         print('Terminando la visita al nodo de inicio del programa')
@@ -88,9 +92,11 @@ class MyVisitor(CompiscriptVisitor):
             
             if not superclass:
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la superclase {superclass_name} no ha sido declarada")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la superclase {superclass_name} no ha sido declarada")
             
             elif not isinstance(superclass.type, ClassType):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: {superclass_name} no es una clase")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: {superclass_name} no es una clase")
                 superclass = None
                 
         # Crear un nuevo ámbito para la clase
@@ -141,6 +147,8 @@ class MyVisitor(CompiscriptVisitor):
         declared_function = self.symbol_table.lookup(function_name)
         if declared_function and declared_function.type.arg_types == function_type.arg_types:
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la función {function_name} con parámetros {function_type.arg_types} ya ha sido declarada")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la función {function_name} con parámetros {function_type.arg_types} ya ha sido declarada")
+            
         else:
             # Crear un símbolo para la función
             symbol = self.symbol_table.add(function_name, function_type)
@@ -162,6 +170,7 @@ class MyVisitor(CompiscriptVisitor):
         # Verificar si la variable no ha sido declarada
         if (var_name in self.symbol_table.current_scope().symbols):
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} ya ha sido declarada")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} ya ha sido declarada")
         
         else:
             
@@ -216,6 +225,7 @@ class MyVisitor(CompiscriptVisitor):
             # Verificar si la condición es booleana
             if not any(isinstance(t, BooleanType) for t in normalize_type(cond_type)):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
             
         else :
             
@@ -247,6 +257,7 @@ class MyVisitor(CompiscriptVisitor):
         # Verificar que la condición sea de tipo booleano
         if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
             print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
+            self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
         
         # Visitar bloque de código
         
@@ -352,6 +363,7 @@ class MyVisitor(CompiscriptVisitor):
             
             if symbol is None: # La variable no ha sido declarada
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} no ha sido declarada")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} no ha sido declarada")
                 
             else:
                 
@@ -390,6 +402,7 @@ class MyVisitor(CompiscriptVisitor):
             # Verificar si cualquiera de los conjuntos contiene tipos incompatibles
             if not any(isinstance(t, BooleanType) for t in normalized_left_type) or not any(isinstance(t, BooleanType) for t in normalized_right_type):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
                 return None, NilType(), None
             
             left_value = left_value or right_value
@@ -411,6 +424,7 @@ class MyVisitor(CompiscriptVisitor):
             # Verificar si cualquiera de los conjuntos contiene tipos incompatibles
             if not any(isinstance(t, BooleanType) for t in normalized_left_type) or not any(isinstance(t, BooleanType) for t in normalized_right_type):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
                 return None, NilType(), None
             
             left_value = left_value and right_value
@@ -434,6 +448,7 @@ class MyVisitor(CompiscriptVisitor):
             # Validar si los tipos son compatibles
             if not types_are_compatible(normalized_left_type, normalized_right_type):
                 print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
+                self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
                 return None, NilType(), None
             
             # Realizar la operación de igualdad o desigualdad
@@ -507,12 +522,14 @@ class MyVisitor(CompiscriptVisitor):
                     
                 else:
                     print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
+                    self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
                     return None, NilType(), None
                 
             elif operator == '-':
                 
                 if not types_are_numeric(left_type, right_type):
                     print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una resta deben ser numéricos")
+                    self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una resta deben ser numéricos")
                     return None, NilType(), None
                 
                 if left_value is not None and right_value is not None:
@@ -540,6 +557,7 @@ class MyVisitor(CompiscriptVisitor):
             # Validar si los tipos son numéricos
             if not types_are_numeric(left_type, right_type):
                 print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
+                self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
                 return None, NilType(), None
             
             if left_value is not None and right_value is not None:
@@ -574,6 +592,7 @@ class MyVisitor(CompiscriptVisitor):
         
         if not class_symbol:
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {class_name} no ha sido declarada")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {class_name} no ha sido declarada")
             return None, None, None
         
         arguments = []
@@ -599,6 +618,7 @@ class MyVisitor(CompiscriptVisitor):
             if operator == '!':
                 if not any(isinstance(t, BooleanType) for t in value_type):
                     print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '!' solo se puede aplicar a booleanos")
+                    self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '!' solo se puede aplicar a booleanos")
                     return None, NilType(), None
                 result_value = not value
                 result_type = BooleanType()
@@ -606,6 +626,7 @@ class MyVisitor(CompiscriptVisitor):
             elif operator == '-':
                 if not any(isinstance(t, NumberType) for t in value_type):
                     print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '-' solo se puede aplicar a números")
+                    self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '-' solo se puede aplicar a números")
                     return None, NilType(), None
                 result_value = -value
                 result_type = NumberType()
@@ -633,14 +654,16 @@ class MyVisitor(CompiscriptVisitor):
             
             if not current_class:
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
                 return None, None, None
             
         if '.' in ctx.getText() and not isinstance(type, NumberType): # Se está llamando a un método o field de una clase
             # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
             # únicamente se asume que el valor de retorno es de tipo 'nil' y advertir si se trata de una inatancia
             
-            if not isinstance(type, InstanceType):
+            if not isinstance(type, InstanceType) and name != "this":
                 print(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
+                self.result.append(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
             
             return None, NilType(), name
         
@@ -656,6 +679,7 @@ class MyVisitor(CompiscriptVisitor):
 
         if not function_symbol:
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: La función '{name}' no ha sido declarada.")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: La función '{name}' no ha sido declarada.")
             return None, None, None
         
         if '(' not in ctx.getText(): # Se está haciendo referencia a una función, no a una llamada
@@ -672,6 +696,7 @@ class MyVisitor(CompiscriptVisitor):
 
         if len(arguments) != len(function_symbol.type.arg_types):
             print(f"Error semántico: La función '{name}' espera {len(function_symbol.type.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
+            self.result.append(f"Error semántico: La función '{name}' espera {len(function_symbol.type.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
             return None, None, None
 
         return None, return_type, name
@@ -723,22 +748,38 @@ class MyVisitor(CompiscriptVisitor):
             print('Primary reconoce instancia')
             value, type, var_name = self.visit(ctx.instantiation())
             
-        elif ctx.getText().startswith('super.'):
+        elif ctx.getText().startswith('super'):
             print('Visita al nodo de super')
             # Encontrar la clase actual
-            current_class = self.symbol_table.lookup('this').type
-            if not current_class or not current_class.superclass:
-                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase o la clase no tiene superclase.")
+            current_class = self.symbol_table.lookup('this')
+            
+            print('SUPER: Clase actual: ', current_class)
+            
+            if not current_class:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase.")
                 return None, None, None
+            
+            if not isinstance(current_class.type, ClassType):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'super' se está utilizando fuera de un contexto de clase.")
+                return None, None, None
+            
+            if not current_class.type.superclass:
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase actual no tiene superclase.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase actual no tiene superclase.")
+                return None, None, None
+            
 
             # Obtener el método de la superclase
             method_name = ctx.IDENTIFIER().getText()
-            superclass = current_class.superclass
+            superclass = current_class.type.superclass
             method = superclass.get_method(method_name)
             print('Tipo del Método encontrado: ', method)
 
             if not method:
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método {method_name} no existe en la superclase {superclass.name}.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método {method_name} no existe en la superclase {superclass.name}.")
                 return None, None, None
 
             print(f"Llamada al método {method_name} en superclase {superclass.name}.")
@@ -756,6 +797,7 @@ class MyVisitor(CompiscriptVisitor):
                 
             else:
                 print(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{var_name}" no ha sido declarada')
+                self.result.append(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{var_name}" no ha sido declarada')
         
         return value, type, var_name
             
@@ -844,6 +886,7 @@ class MyVisitor(CompiscriptVisitor):
             
             if self.symbol_table.lookup(param_name):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
             else:
                 parameters.append(NilType())
                 print(f"Parámetro encontrado: {param_name}")

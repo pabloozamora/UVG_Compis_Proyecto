@@ -1,3 +1,3 @@
-import TextArea from "./TextArea";
+import LinedTextArea from "./LinedTextArea";
 
-export default TextArea;
+export default LinedTextArea;
