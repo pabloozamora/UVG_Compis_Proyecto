@@ -1,17 +1,5 @@
-class Perro{
-    init() {
-        this.color = "cafe";
+var miAnonFun = fun(param1) {
+    var hola = "hola";
+};
 
-        return 1;
-    }
-}
-
-class Cachorro extends Perro{
-
-    init() {
-        super.init()
-        this.raza = "golden";
-    }
-}
-
-var lol = 1;
+miAnonFun();

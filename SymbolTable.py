@@ -59,6 +59,14 @@ class FunctionType:
     def __repr__(self):
         return f"FunctionType(return_type={self.return_type}, arg_types={self.arg_types})"
     
+class AnonymousFunctionType:
+    def __init__(self, return_type, arg_types):
+        self.return_type = return_type
+        self.arg_types = arg_types
+        
+    def __repr__(self):
+        return f"AnonymousFunctionType(return_type={self.return_type}, arg_types={self.arg_types})"
+    
 class ClassType:
     def __init__(self, name, superclass=None):
         self.name = name

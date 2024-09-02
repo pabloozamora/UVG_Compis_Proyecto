@@ -1,6 +1,6 @@
 from CompiscriptParser import CompiscriptParser
 from CompiscriptVisitor import CompiscriptVisitor
-from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType
+from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType, AnonymousFunctionType
 
 def determine_type(value):
         if isinstance(value, int) or isinstance(value, float):
@@ -124,8 +124,12 @@ class MyVisitor(CompiscriptVisitor):
         
         else:
             
-            # Obtener los hijos de 'expression' para determinar el tipo de la variable y su valor
-            var_value, var_type, _ = self.visit(ctx.expression())
+            var_value = None
+            var_type = NilType()  # Asignar el tipo por defecto a NilType
+            
+            # Si hay una expresión de inicialización, determinar el tipo de la variable y su valor
+            if ctx.expression():
+                var_value, var_type, _ = self.visit(ctx.expression())
             
             # Crear un símbolo para la variable
             if var_type is not None:
@@ -233,14 +237,15 @@ class MyVisitor(CompiscriptVisitor):
                 
                 # Obtener el valor y tipo de la variable de la siguiente asignación
                 
-                var_value, var_type, _ = self.visit(ctx.assignment())
+                if ctx.assignment():
+                    
+                    var_value, var_type, _ = self.visit(ctx.assignment())
+                    # Determinar el tipo del valor que está siendo asignado
+                    symbol.type = var_type
+                    symbol.value = var_value
+                    print(f"Variable {var_name} de tipo {var_type} asignada con valor {var_value}")
                 
-                # Determinar el tipo del valor que está siendo asignado
-                symbol.type = var_type
-                symbol.value = var_value
-                print(f"Variable {var_name} de tipo {var_type} asignada con valor {var_value}")
-                
-        else: # Se sigue con logic_or
+        elif ctx.logic_or(): # Se sigue con logic_or
             
             var_value, var_type, var_name = self.visit(ctx.logic_or())
             
@@ -337,10 +342,10 @@ class MyVisitor(CompiscriptVisitor):
             return None, None, None
         
         # Si no hay () en el texto, significa que no se trata de una función
-        if '(' not in ctx.getText() or isinstance(type, InstanceType):
+        if '(' not in ctx.getText() or isinstance(type, InstanceType) or (isinstance(type, AnonymousFunctionType) and name is None):
             return value, type, name
         
-        if not isinstance(type, FunctionType):
+        if not (isinstance(type, FunctionType) or isinstance(type, AnonymousFunctionType)):
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: '{name}' no es una función.")
             return None, None, None
         
@@ -398,6 +403,10 @@ class MyVisitor(CompiscriptVisitor):
             value = 'this'
             type = ClassType('this')
             var_name = 'this'
+            
+        elif ctx.funAnon():
+            print('Primary reconoce función anónima')
+            type = self.visit(ctx.funAnon())  # Visita la función anónima
             
         elif ctx.instantiation(): # Si es una instancia
             print('Primary reconoce instancia')
@@ -476,6 +485,41 @@ class MyVisitor(CompiscriptVisitor):
         self.return_types = set()
         
         return function_name, function_type
+    
+    
+    # Visit a parse tree produced by CompiscriptParser#funAnon.
+    def visitFunAnon(self, ctx:CompiscriptParser.FunAnonContext):
+        print('Visita al nodo de función anónima')
+        
+        # El tipo de retorno de la función es 'nil' por defecto.
+        return_type = NilType()
+        
+        # Crear un nuevo ámbito para los parámetros de la función anónima
+        self.symbol_table.enter_scope()
+        
+        # Obtener los parámetros de la función anónima
+        parameters = []
+        if ctx.parameters():
+            parameters = self.visit(ctx.parameters())
+        
+        # Crear un tipo para la función anónima
+        function_type = AnonymousFunctionType(return_type, parameters)
+        
+        # Visitar el bloque de la función anónima
+        self.visit(ctx.block())
+        
+        # Salir del ámbito de los parámetros
+        self.symbol_table.exit_scope()
+        
+        # Determinar si la función anónima tiene uno o más valores de retorno
+        if self.return_types:
+            function_type.return_type = self.return_types
+            print(f"Tipos de retorno de la función anónima: {function_type.return_type}")
+        
+        # Limpiar la lista de tipos de retorno para esta función
+        self.return_types = set()
+        
+        return function_type  # Devolver el tipo de la función anónima
 
 
     # Visit a parse tree produced by CompiscriptParser#parameters.
