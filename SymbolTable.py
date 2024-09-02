@@ -53,6 +53,7 @@ class NilType:
     
 class FunctionType:
     def __init__(self, return_type, arg_types):
+        self.name = "function"
         self.return_type = return_type
         self.arg_types = arg_types
         
@@ -61,6 +62,7 @@ class FunctionType:
     
 class AnonymousFunctionType:
     def __init__(self, return_type, arg_types):
+        self.name = "function"
         self.return_type = return_type
         self.arg_types = arg_types
         
@@ -91,6 +93,7 @@ class ClassType:
     
 class InstanceType:
     def __init__(self, class_type=None, init_arguments=None):
+        self.name = class_type.name
         self.class_type = class_type
         self.fields = {}
         self.init_arguments = init_arguments or []

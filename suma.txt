@@ -1,5 +1,7 @@
-var miAnonFun = fun(param1) {
-    var hola = "hola";
-};
+fun devolverFalse(){
+    return 7;
+}
 
-miAnonFun();
+var operador1 = true;
+var operador2 = 7;
+var resultado = 7 * operador2 + 1;

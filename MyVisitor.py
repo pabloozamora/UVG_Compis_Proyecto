@@ -14,6 +14,47 @@ def determine_type(value):
         
         elif value is None:
             return NilType()
+        
+def normalize_type(type_obj):
+    if not isinstance(type_obj, set):
+        return {type_obj}
+    return type_obj
+
+def types_are_compatible(left_types, right_types):
+    # Normalizar los conjuntos de tipos
+    normalized_left_types = normalize_type(left_types)
+    normalized_right_types = normalize_type(right_types)
+    
+    # Comprobar si los tipos en ambos conjuntos son compatibles
+    for left_type in normalized_left_types:
+        for right_type in normalized_right_types:
+            if isinstance(left_type, type(right_type)) or isinstance(right_type, type(left_type)):
+                return True
+    return False
+
+def types_are_numeric(left_types, right_types):
+    # Normalizar los conjuntos de tipos
+    normalized_left_types = normalize_type(left_types)
+    normalized_right_types = normalize_type(right_types)
+    
+    # Comprobar si al menos uno de los tipos en ambos conjuntos es numérico
+    for left_type in normalized_left_types:
+        for right_type in normalized_right_types:
+            if isinstance(left_type, NumberType) and isinstance(right_type, NumberType):
+                return True
+    return False
+
+def types_are_string(left_types, right_types):
+    # Normalizar los conjuntos de tipos
+    normalized_left_types = normalize_type(left_types)
+    normalized_right_types = normalize_type(right_types)
+    
+    # Comprobar si al menos uno de los tipos en ambos conjuntos es numérico
+    for left_type in normalized_left_types:
+        for right_type in normalized_right_types:
+            if isinstance(left_type, StringType) and isinstance(right_type, StringType):
+                return True
+    return False
 
 class MyVisitor(CompiscriptVisitor):
     def __init__(self):
@@ -254,32 +295,187 @@ class MyVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#logic_or.
     def visitLogic_or(self, ctx:CompiscriptParser.Logic_orContext):
-        return self.visitChildren(ctx)
-
+        print('Visita al nodo de operador lógico OR')
+        
+        left_value, left_type, left_name = self.visit(ctx.logic_and(0))
+        normalized_left_type = normalize_type(left_type)
+        
+        print('Operador or left type: ', left_type)
+        
+        for i in range(1, len(ctx.logic_and())):
+            right_value, right_type, right_name = self.visit(ctx.logic_and(i))
+            normalized_right_type = normalize_type(right_type)
+            
+            print('Operador or right type: ', right_type)
+            
+            # Verificar si cualquiera de los conjuntos contiene tipos incompatibles
+            if not any(isinstance(t, BooleanType) for t in normalized_left_type) or not any(isinstance(t, BooleanType) for t in normalized_right_type):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
+                return None, NilType(), None
+            
+            left_value = left_value or right_value
+            left_type = BooleanType()
+            
+        return left_value, left_type, left_name
 
     # Visit a parse tree produced by CompiscriptParser#logic_and.
     def visitLogic_and(self, ctx:CompiscriptParser.Logic_andContext):
-        return self.visitChildren(ctx)
+        left_value, left_type, left_name = self.visit(ctx.equality(0))
+        normalized_left_type = normalize_type(left_type)
+        
+        for i in range(1, len(ctx.equality())):
+            right_value, right_type, right_name = self.visit(ctx.equality(i))
+            normalized_right_type = normalize_type(right_type)
+            
+            print(normalized_right_type)
+            
+            # Verificar si cualquiera de los conjuntos contiene tipos incompatibles
+            if not any(isinstance(t, BooleanType) for t in normalized_left_type) or not any(isinstance(t, BooleanType) for t in normalized_right_type):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
+                return None, NilType(), None
+            
+            left_value = left_value and right_value
+            left_type = BooleanType()
+            
+        return left_value, left_type, left_name
 
 
     # Visit a parse tree produced by CompiscriptParser#equality.
     def visitEquality(self, ctx:CompiscriptParser.EqualityContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de igualdad')
+        
+        left_value, left_type, left_name = self.visit(ctx.comparison(0))
+        normalized_left_type = normalize_type(left_type)
+        
+        for i in range(1, len(ctx.comparison())):
+            
+            right_value, right_type, right_name = self.visit(ctx.comparison(i))
+            normalized_right_type = normalize_type(right_type)
+            
+            # Validar si los tipos son compatibles
+            if not types_are_compatible(normalized_left_type, normalized_right_type):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
+                return None, NilType(), None
+            
+            # Realizar la operación de igualdad o desigualdad
+            if '==' in ctx.getText():
+                left_value = left_value == right_value
+            else:
+                left_value = left_value != right_value
+                
+            left_type = {BooleanType()}  # El resultado de una igualdad es siempre booleano
+            
+        return left_value, left_type, left_name
 
 
     # Visit a parse tree produced by CompiscriptParser#comparison.
     def visitComparison(self, ctx:CompiscriptParser.ComparisonContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de comparación')
+        
+        left_value, left_type, left_name = self.visit(ctx.term(0))
+        normalized_left_type = normalize_type(left_type)
+        
+        for i in range(1, len(ctx.term())):
+            
+            right_value, right_type, right_name = self.visit(ctx.term(i))
+            normalized_right_type = normalize_type(right_type)
+            
+            # Validar si los tipos son numéricos
+            if not types_are_numeric(normalized_left_type, normalized_right_type):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
+                return None, NilType(), None
+            
+            # Realizar la operación de comparación
+            if '<' in ctx.getText():
+                left_value = left_value < right_value
+            elif '<=' in ctx.getText():
+                left_value = left_value <= right_value
+            elif '>' in ctx.getText():
+                left_value = left_value > right_value
+            elif '>=' in ctx.getText():
+                left_value = left_value >= right_value
+                    
+            left_type = {BooleanType()}  # El resultado de una comparación es siempre booleano
+            
+        return left_value, left_type, left_name
 
 
     # Visit a parse tree produced by CompiscriptParser#term.
     def visitTerm(self, ctx:CompiscriptParser.TermContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de término')
+        
+        left_value, left_type, left_name = self.visit(ctx.factor(0))
+        
+        for i in range(1, len(ctx.factor())):
+            
+            right_value, right_type, right_name = self.visit(ctx.factor(i))
+            
+            operator = ctx.getChild(2 * i - 1).getText()
+            
+            if operator == '+':
+                
+                numeric_types = types_are_numeric(left_type, right_type)
+                string_types = types_are_string(left_type, right_type)
+                
+                if numeric_types:
+                    
+                    if left_value is not None and right_value is not None:
+                    
+                        left_value = left_value + right_value
+                
+                elif string_types:
+                    left_value = str(left_value) + str(right_value)
+                    
+                else:
+                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
+                    return None, NilType(), None
+                
+            elif operator == '-':
+                
+                if not types_are_numeric(left_type, right_type):
+                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una resta deben ser numéricos")
+                    return None, NilType(), None
+                
+                if left_value is not None and right_value is not None:
+                    left_value = left_value - right_value
+                
+            left_type = NumberType()
+            
+        return left_value, left_type, left_name
 
 
     # Visit a parse tree produced by CompiscriptParser#factor.
     def visitFactor(self, ctx:CompiscriptParser.FactorContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de factor')
+        
+        left_value, left_type, left_name = self.visit(ctx.unary(0))
+        
+        for i in range(1, len(ctx.unary())):
+
+            right_value, right_type, right_name = self.visit(ctx.unary(i))
+            
+            operator = ctx.getChild(2 * i - 1).getText()
+            
+            # Validar si los tipos son numéricos
+            if not types_are_numeric(left_type, right_type):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
+                return None, NilType(), None
+            
+            if left_value is not None and right_value is not None:
+                if operator == '*':
+                    left_value = left_value * right_value
+                elif operator == '/':
+                    left_value = left_value / right_value
+                elif operator == '%':
+                    left_value = left_value % right_value
+                    
+            else:
+                left_value = None
+                
+            left_type = NumberType()
+            
+            
+        return left_value, left_type, left_name
     
     # Visit a parse tree produced by CompiscriptParser#array.
     def visitArray(self, ctx:CompiscriptParser.ArrayContext):
@@ -312,7 +508,33 @@ class MyVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#unary.
     def visitUnary(self, ctx:CompiscriptParser.UnaryContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de operador unario')
+        
+        # Caso 1: es un operador unario
+        if ctx.getChildCount() == 2:  # Esto indica que hay un operador unario seguido por otro unary
+            operator = ctx.getChild(0).getText()
+            value, value_type, _ = self.visit(ctx.unary())
+            
+            # Verificar que el tipo del valor sea compatible con el operador
+            if operator == '!':
+                if not any(isinstance(t, BooleanType) for t in value_type):
+                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '!' solo se puede aplicar a booleanos")
+                    return None, NilType(), None
+                result_value = not value
+                result_type = BooleanType()
+            
+            elif operator == '-':
+                if not any(isinstance(t, NumberType) for t in value_type):
+                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el operador '-' solo se puede aplicar a números")
+                    return None, NilType(), None
+                result_value = -value
+                result_type = NumberType()
+            
+            return result_value, result_type, None
+        
+        # Caso 2: es una llamada a función u otra expresión primaria
+        else:
+            return self.visit(ctx.call())
 
 
     # Visit a parse tree produced by CompiscriptParser#call.
@@ -341,13 +563,9 @@ class MyVisitor(CompiscriptVisitor):
         if type is None: # No acarrear errores semánticos
             return None, None, None
         
-        # Si no hay () en el texto, significa que no se trata de una función
-        if '(' not in ctx.getText() or isinstance(type, InstanceType) or (isinstance(type, AnonymousFunctionType) and name is None):
-            return value, type, name
-        
+        # Si no se trata de una función, devolver primary
         if not (isinstance(type, FunctionType) or isinstance(type, AnonymousFunctionType)):
-            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: '{name}' no es una función.")
-            return None, None, None
+            return value, type, name
         
         # Buscar la función en la tabla de símbolos
         function_symbol = self.symbol_table.lookup(name)
@@ -355,6 +573,12 @@ class MyVisitor(CompiscriptVisitor):
         if not function_symbol:
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: La función '{name}' no ha sido declarada.")
             return None, None, None
+        
+        if '(' not in ctx.getText(): # Se está haciendo referencia a una función, no a una llamada
+            return_type = function_symbol.type
+            
+        else:
+            return_type = function_symbol.type.return_type
 
         # Validar los argumentos pasados a la función
         arguments = []
@@ -366,7 +590,7 @@ class MyVisitor(CompiscriptVisitor):
             print(f"Error semántico: La función '{name}' espera {len(function_symbol.type.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
             return None, None, None
 
-        return None, function_symbol.type.return_type, name
+        return None, return_type, name
 
 
     # Visit a parse tree produced by CompiscriptParser#primary.
@@ -386,6 +610,9 @@ class MyVisitor(CompiscriptVisitor):
             elif ctx.STRING():
                 value = ctx.STRING().getText()
                 type = StringType()
+                
+        elif ctx.expression(): # Si es una expresión
+            value, type, var_name = self.visit(ctx.expression())
                 
         elif ctx.getText() == 'nil':
             value = None
