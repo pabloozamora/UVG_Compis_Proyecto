@@ -2,6 +2,20 @@ fun devolverFalse(){
     return 7;
 }
 
-var operador1 = true;
+var operador1 = 7;
 var operador2 = 7;
-var resultado = 7 * operador2 + 1;
+
+if (operador1 + operador2 == 14) {
+    var resultado = 14;
+
+    print resultado;
+}
+
+for (var i = 0; i == 10;) {
+    print "hola";
+}
+
+var i = "hola";
+while (i == "hola") {
+    print "hola";
+}

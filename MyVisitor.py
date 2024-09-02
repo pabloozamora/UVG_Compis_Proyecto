@@ -192,12 +192,71 @@ class MyVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#forStmt.
     def visitForStmt(self, ctx:CompiscriptParser.ForStmtContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de for')
+        
+        # Crear un nuevo ámbito para el ciclo for
+        self.symbol_table.enter_scope()
+        
+        # Agregar un símbolo únicamente como indicador si un "break" o "continue" es adecuado
+        self.symbol_table.add('for', NilType())
+        
+        if ctx.varDecl():
+            self.visit(ctx.varDecl())
+        elif ctx.exprStmt():
+            self.visit(ctx.exprStmt())
+            
+        # Los índices de los hijos importantes en `for`:
+        cond_index = 3
+        update_index = 5
+
+        # Verificar si hay una expresión condicional en el medio
+        if ctx.getChild(cond_index).getText() != ';':  # Si no es un punto y coma, es una expresión
+            cond_value, cond_type, _ = self.visit(ctx.expression(0))
+            
+            # Verificar si la condición es booleana
+            if not any(isinstance(t, BooleanType) for t in normalize_type(cond_type)):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
+            
+        else :
+            
+            print("No hay expresión condicional en el bucle 'for'. Ejecutará hasta un 'break' o 'return'.")
+            update_index = 4  # Si no hay condición, el índice de actualización cambia
+            
+        # Visitar la expresión final (si existe)
+        if ctx.getChild(update_index).getText() != ')': # Hay expresión de actualización
+            
+            update_expression = ctx.getChild(update_index)
+            self.visit(update_expression)
+
+        # Visitar el cuerpo del bucle
+        self.visit(ctx.statement())
+        
+        # Salir del ámbito del ciclo for
+        self.symbol_table.exit_scope()
+
+        return None
 
 
     # Visit a parse tree produced by CompiscriptParser#ifStmt.
     def visitIfStmt(self, ctx:CompiscriptParser.IfStmtContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de if')
+        
+        # Evaluar la condición del if
+        condition_value, condition_type, _ = self.visit(ctx.expression())
+        
+        # Verificar que la condición sea de tipo booleano
+        if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
+            return None
+        
+        # Visitar bloque de código
+        
+        self.visit(ctx.statement(0))
+            
+        if ctx.statement(1):  # Existe una cláusula else
+            self.visit(ctx.statement(1))
+        
+        return None
 
 
     # Visit a parse tree produced by CompiscriptParser#printStmt.
@@ -224,7 +283,28 @@ class MyVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#whileStmt.
     def visitWhileStmt(self, ctx:CompiscriptParser.WhileStmtContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de while')
+        
+        # Crear un nuevo ámbito para el ciclo while
+        self.symbol_table.enter_scope()
+        
+        # Agregar un símbolo únicamente como indicador si un "break" o "continue" es adecuado
+        self.symbol_table.add('while', NilType())
+        
+        # Evaluar la condición del while
+        condition_value, condition_type, _ = self.visit(ctx.expression())
+        
+        # Verificar que la condición sea de tipo booleano
+        if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
+            
+        # Visitar el cuerpo del bucle
+        self.visit(ctx.statement())
+        
+        # Salir del ámbito del ciclo while
+        self.symbol_table.exit_scope()
+        
+        return None
 
 
     # Visit a parse tree produced by CompiscriptParser#block.
