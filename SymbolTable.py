@@ -89,7 +89,7 @@ class ClassType:
         return self.fields.get(name)
         
     def __repr__(self):
-        return f"ClassType(name={self.name}, fields={self.fields}, methods={self.methods})"
+        return f"ClassType(name={self.name}, fields={self.fields}, methods={self.methods} superclass={self.superclass})"
     
 class InstanceType:
     def __init__(self, class_type=None, init_arguments=None):

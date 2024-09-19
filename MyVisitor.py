@@ -127,7 +127,7 @@ class MyVisitor(CompiscriptVisitor):
         # Agregar la clase actualizada a la tabla de símbolos
         self.symbol_table.add(class_name, class_type)
         
-        print(f"Clase {class_name} con superclase {superclass.type if superclass else None} y tipo {class_type} declarada")
+        print(f"\nClase {class_name} con superclase {superclass.type if superclass else None} y tipo {class_type} declarada\n")
         
         return class_name, class_type
 
@@ -152,6 +152,8 @@ class MyVisitor(CompiscriptVisitor):
         else:
             # Crear un símbolo para la función
             symbol = self.symbol_table.add(function_name, function_type)
+            
+            print(f"\nFunción {function_name} con parámetros {function_type.arg_types} y tipo de retorno {function_type.return_type} declarada\n")
             
             current_class = self.symbol_table.lookup('this')
             if current_class:
@@ -184,13 +186,14 @@ class MyVisitor(CompiscriptVisitor):
             # Crear un símbolo para la variable
             if var_type is not None:
                 symbol = self.symbol_table.add(var_name, var_type, var_value)
-                print(f"Variable {var_name} de tipo {var_type} y valor {var_value} declarada")
+                print(f"\nVariable {var_name} de tipo {var_type} y valor {var_value} declarada\n")
         
         return var_type
 
 
     # Visit a parse tree produced by CompiscriptParser#statement.
     def visitStatement(self, ctx:CompiscriptParser.StatementContext):
+        print('Llegó a un nodo de declaración de sentencia')
         return self.visitChildren(ctx)
 
 
@@ -218,28 +221,33 @@ class MyVisitor(CompiscriptVisitor):
         cond_index = 3
         update_index = 5
 
-        # Verificar si hay una expresión condicional en el medio
+        # Verificar si hay una expresión condicional en el medio 
+        
         if ctx.getChild(cond_index).getText() != ';':  # Si no es un punto y coma, es una expresión
-            cond_value, cond_type, _ = self.visit(ctx.expression(0))
             
-            # Verificar si la condición es booleana
-            if not any(isinstance(t, BooleanType) for t in normalize_type(cond_type)):
-                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
-                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
+            if (ctx.expression(0)): # Verificar que no haya error sintáctico
+                cond_value, cond_type, _ = self.visit(ctx.expression(0))
+                
+                # Verificar si la condición es booleana
+                if not any(isinstance(t, BooleanType) for t in normalize_type(cond_type)):
+                    print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
+                    self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
             
         else :
             
             print("No hay expresión condicional en el bucle 'for'. Ejecutará hasta un 'break' o 'return'.")
             update_index = 4  # Si no hay condición, el índice de actualización cambia
             
-        # Visitar la expresión final (si existe)
-        if ctx.getChild(update_index).getText() != ')': # Hay expresión de actualización
-            
-            update_expression = ctx.getChild(update_index)
-            self.visit(update_expression)
+        # Visitar la expresión final (si existe y no hay error sintáctico)
+        if ctx.getChild(update_index):
+            if ctx.getChild(update_index).getText() != ')': # Hay expresión de actualización
+                
+                update_expression = ctx.getChild(update_index)
+                self.visit(update_expression)
 
-        # Visitar el cuerpo del bucle
-        self.visit(ctx.statement())
+        # Visitar el cuerpo del bucle (si no hay error sintáctico)
+        if ctx.statement():
+            self.visit(ctx.statement())
         
         # Salir del ámbito del ciclo for
         self.symbol_table.exit_scope()
@@ -259,9 +267,10 @@ class MyVisitor(CompiscriptVisitor):
             print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
             self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del if debe ser de tipo booleano")
         
-        # Visitar bloque de código
+        # Visitar bloque de código (solo cuando no hay error sintáctico)
         
-        self.visit(ctx.statement(0))
+        if ctx.statement(0):
+            self.visit(ctx.statement(0))
             
         if ctx.statement(1):  # Existe una cláusula else
             self.visit(ctx.statement(1))
@@ -308,8 +317,9 @@ class MyVisitor(CompiscriptVisitor):
         if not any(isinstance(t, BooleanType) for t in normalize_type(condition_type)):
             print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
             
-        # Visitar el cuerpo del bucle
-        self.visit(ctx.statement())
+        # Visitar el cuerpo del bucle (solamente si no hay error sintáctico)
+        if ctx.statement():
+            self.visit(ctx.statement())
         
         # Salir del ámbito del ciclo while
         self.symbol_table.exit_scope()
@@ -477,6 +487,7 @@ class MyVisitor(CompiscriptVisitor):
             # Validar si los tipos son numéricos
             if not types_are_numeric(normalized_left_type, normalized_right_type):
                 print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
+                self.result.append(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
                 return None, NilType(), None
             
             # Realizar la operación de comparación
@@ -888,7 +899,7 @@ class MyVisitor(CompiscriptVisitor):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
             else:
-                parameters.append(NilType())
+                parameters.append(param_name) # Agregar tipo en lugar de nombre?
                 print(f"Parámetro encontrado: {param_name}")
                 self.symbol_table.add(param_name, NilType())
             

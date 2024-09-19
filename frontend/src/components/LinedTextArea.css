@@ -6,6 +6,7 @@
     width: 100%;
     max-height: 300px; /* Altura máxima para el contenedor */
     overflow: hidden; /* Oculta cualquier desbordamiento que no esté cubierto por los hijos */
+    justify-content: center;
   }
   
   .line-numbers {
@@ -21,7 +22,7 @@
   }
   
   .text-area {
-    width: 100%;
+    width: 500px;
     padding: 10px;
     border: none;
     outline: none;
