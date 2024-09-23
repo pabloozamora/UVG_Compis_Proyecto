@@ -1,19 +1,6 @@
 from CompiscriptParser import CompiscriptParser
 from CompiscriptVisitor import CompiscriptVisitor
-from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType, AnonymousFunctionType
-
-def determine_type(value):
-        if isinstance(value, int) or isinstance(value, float):
-            return NumberType()
-        
-        elif isinstance(value, bool):
-            return BooleanType()
-        
-        elif isinstance(value, str):
-            return StringType()
-        
-        elif value is None:
-            return NilType()
+from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType, AnonymousFunctionType, AnyType
         
 def normalize_type(type_obj):
     if not isinstance(type_obj, set):
@@ -27,7 +14,11 @@ def types_are_compatible(left_types, right_types):
     
     # Comprobar si los tipos en ambos conjuntos son compatibles
     for left_type in normalized_left_types:
+        if isinstance(left_type, AnyType):
+            return True
         for right_type in normalized_right_types:
+            if isinstance(right_type, AnyType):
+                return True
             if isinstance(left_type, type(right_type)) or isinstance(right_type, type(left_type)):
                 return True
     return False
@@ -37,10 +28,10 @@ def types_are_numeric(left_types, right_types):
     normalized_left_types = normalize_type(left_types)
     normalized_right_types = normalize_type(right_types)
     
-    # Comprobar si al menos uno de los tipos en ambos conjuntos es numérico
+    # Comprobar si al menos uno de los tipos en ambos conjuntos es numérico o Any
     for left_type in normalized_left_types:
         for right_type in normalized_right_types:
-            if isinstance(left_type, NumberType) and isinstance(right_type, NumberType):
+            if (isinstance(left_type, NumberType) or isinstance(left_type, AnyType)) and (isinstance(right_type, NumberType) or isinstance(right_type, AnyType)):
                 return True
     return False
 
@@ -48,11 +39,13 @@ def types_are_string(left_types, right_types):
     # Normalizar los conjuntos de tipos
     normalized_left_types = normalize_type(left_types)
     normalized_right_types = normalize_type(right_types)
+    print('left types: ', normalized_left_types)
+    print('right types: ', normalized_right_types)
     
-    # Comprobar si al menos uno de los tipos en ambos conjuntos es numérico
+    # Comprobar si al menos uno de los tipos en ambos conjuntos es string o Any
     for left_type in normalized_left_types:
         for right_type in normalized_right_types:
-            if isinstance(left_type, StringType) and isinstance(right_type, StringType):
+            if (isinstance(left_type, StringType) or isinstance(left_type, AnyType)) and (isinstance(right_type, StringType) or isinstance(right_type, AnyType)):
                 return True
     return False
 
@@ -118,11 +111,22 @@ class MyVisitor(CompiscriptVisitor):
         # Los hijos pudieron haber agregado campos a la clase, por lo que se obtiene nuevamente de la tabla de símbolos
         updated_class = self.symbol_table.lookup('this')
         
+        # Eliminar el símbolo this de la tabla de símbolos
+        self.symbol_table.delete('this')
+        
         # Agregar campos a la clase
         class_type.fields = updated_class.type.fields
         
         # Salir del ámbito de la clase
         self.symbol_table.exit_scope()
+        
+        # Verificar si la clase ya ha sido declarada
+        declared_class = self.symbol_table.lookup(class_name)
+        
+        if declared_class:
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {class_name} ya ha sido declarado")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {class_name} ya ha sido declarado")
+            return None, None
         
         # Agregar la clase actualizada a la tabla de símbolos
         self.symbol_table.add(class_name, class_type)
@@ -145,7 +149,12 @@ class MyVisitor(CompiscriptVisitor):
         
         # Verificar si la función ya ha sido declarada
         declared_function = self.symbol_table.lookup(function_name)
-        if declared_function and declared_function.type.arg_types == function_type.arg_types:
+        
+        if declared_function and not isinstance(declared_function.type, FunctionType):
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: {function_name} ya ha sido declarado como una variable")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: {function_name} ya ha sido declarado como una variable")
+        
+        elif declared_function and len(declared_function.type.arg_types) == len(function_type.arg_types):
             print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la función {function_name} con parámetros {function_type.arg_types} ya ha sido declarada")
             self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la función {function_name} con parámetros {function_type.arg_types} ya ha sido declarada")
             
@@ -171,13 +180,15 @@ class MyVisitor(CompiscriptVisitor):
         
         # Verificar si la variable no ha sido declarada
         if (var_name in self.symbol_table.current_scope().symbols):
-            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} ya ha sido declarada")
-            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la variable {var_name} ya ha sido declarada")
+            print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador '{var_name}' ya ha sido declarado")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador '{var_name}' ya ha sido declarado")
+            
+            return None
         
         else:
             
             var_value = None
-            var_type = NilType()  # Asignar el tipo por defecto a NilType
+            var_type = AnyType()  # Asignar el tipo por defecto a Any
             
             # Si hay una expresión de inicialización, determinar el tipo de la variable y su valor
             if ctx.expression():
@@ -210,7 +221,7 @@ class MyVisitor(CompiscriptVisitor):
         self.symbol_table.enter_scope()
         
         # Agregar un símbolo únicamente como indicador si un "break" o "continue" es adecuado
-        self.symbol_table.add('for', NilType())
+        self.symbol_table.add('for', AnyType())
         
         if ctx.varDecl():
             self.visit(ctx.varDecl())
@@ -293,9 +304,9 @@ class MyVisitor(CompiscriptVisitor):
             print(f"Tipo de retorno encontrado: {return_type}")
             self.return_types.add(return_type)
         else:
-            # Si no hay expresión, es un retorno implícito de 'nil'
+            # Si no hay expresión, es un retorno implícito de 'Nil'
             self.return_types.add(NilType())
-            print("Retorno implícito de 'nil'")
+            print("Retorno implícito de 'Nil'")
             
         return self.return_types
 
@@ -308,7 +319,7 @@ class MyVisitor(CompiscriptVisitor):
         self.symbol_table.enter_scope()
         
         # Agregar un símbolo únicamente como indicador si un "break" o "continue" es adecuado
-        self.symbol_table.add('while', NilType())
+        self.symbol_table.add('while', AnyType())
         
         # Evaluar la condición del while
         condition_value, condition_type, _ = self.visit(ctx.expression())
@@ -345,7 +356,7 @@ class MyVisitor(CompiscriptVisitor):
         print('Visita al nodo de asignación')
         var_name = None
         var_value = None
-        var_type = NilType()
+        var_type = AnyType()
         
         
         call_node = ctx.call()  # Intenta obtener el nodo de llamada a función
@@ -363,8 +374,16 @@ class MyVisitor(CompiscriptVisitor):
                 
                 if call_name == 'this': # Se está haciendo referencia a un método o field de la clase actual
                     current_class = self.symbol_table.lookup('this')
-                    current_class.type.add_field(var_name, NilType())
+                    current_class.type.add_field(var_name, AnyType())
                     print(current_class)
+                    
+                 # Obtener el valor y tipo de la variable de la siguiente asignación
+                
+                if ctx.assignment(): # Evitar error sintáctico
+                    
+                    var_value, var_type, _ = self.visit(ctx.assignment())
+                    # Determinar el tipo del valor que está siendo asignado
+                    print(f"Se asigna a la propiedad {var_name} de tipo {var_type} el valor {var_value}")
                     
                 return var_value, var_type, var_name
             
@@ -379,7 +398,7 @@ class MyVisitor(CompiscriptVisitor):
                 
                 # Obtener el valor y tipo de la variable de la siguiente asignación
                 
-                if ctx.assignment():
+                if ctx.assignment(): # Evitar error sintáctico
                     
                     var_value, var_type, _ = self.visit(ctx.assignment())
                     # Determinar el tipo del valor que está siendo asignado
@@ -415,7 +434,6 @@ class MyVisitor(CompiscriptVisitor):
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
                 return None, NilType(), None
             
-            left_value = left_value or right_value
             left_type = BooleanType()
             
         return left_value, left_type, left_name
@@ -437,7 +455,6 @@ class MyVisitor(CompiscriptVisitor):
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador lógico OR deben ser de tipo 'boolean'")
                 return None, NilType(), None
             
-            left_value = left_value and right_value
             left_type = BooleanType()
             
         return left_value, left_type, left_name
@@ -460,12 +477,6 @@ class MyVisitor(CompiscriptVisitor):
                 print(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
                 self.result.append(f"Advertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de igualdad deben ser del mismo tipo o compatibles")
                 return None, NilType(), None
-            
-            # Realizar la operación de igualdad o desigualdad
-            if '==' in ctx.getText():
-                left_value = left_value == right_value
-            else:
-                left_value = left_value != right_value
                 
             left_type = BooleanType()  # El resultado de una igualdad es siempre booleano
             
@@ -489,16 +500,6 @@ class MyVisitor(CompiscriptVisitor):
                 print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
                 self.result.append(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador de comparación deben ser numéricos")
                 return None, NilType(), None
-            
-            # Realizar la operación de comparación
-            if '<' in ctx.getText():
-                left_value = left_value < right_value
-            elif '<=' in ctx.getText():
-                left_value = left_value <= right_value
-            elif '>' in ctx.getText():
-                left_value = left_value > right_value
-            elif '>=' in ctx.getText():
-                left_value = left_value >= right_value
                     
             left_type = BooleanType()  # El resultado de una comparación es siempre booleano
             
@@ -546,7 +547,7 @@ class MyVisitor(CompiscriptVisitor):
                 if left_value is not None and right_value is not None:
                     left_value = left_value - right_value
                 
-            left_type = NumberType()
+                left_type = NumberType()
             
         return left_value, left_type, left_name
 
@@ -589,7 +590,16 @@ class MyVisitor(CompiscriptVisitor):
     
     # Visit a parse tree produced by CompiscriptParser#array.
     def visitArray(self, ctx:CompiscriptParser.ArrayContext):
-        return self.visitChildren(ctx)
+        print('Visita al nodo de arreglo')
+        types = set()
+        
+        for expression in ctx.expression():
+            value, type, _ = self.visit(expression)
+            types.add(type)
+        
+        print('Tipos del arreglo: ', types)
+        
+        return types
 
 
     # Visit a parse tree produced by CompiscriptParser#instantiation.
@@ -668,15 +678,15 @@ class MyVisitor(CompiscriptVisitor):
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
                 return None, None, None
             
-        if '.' in ctx.getText() and not isinstance(type, NumberType): # Se está llamando a un método o field de una clase
+        if '.' in ctx.getText() and not (isinstance(type, NumberType) or isinstance(type, StringType)) and not ctx.getText().startswith('super'): # Se está llamando a un método o field de una clase
             # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
-            # únicamente se asume que el valor de retorno es de tipo 'nil' y advertir si se trata de una inatancia
+            # únicamente se asume que el valor de retorno es de tipo 'Any' y advertir si se trata de una inatancia
             
             if not isinstance(type, InstanceType) and name != "this":
                 print(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
                 self.result.append(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
             
-            return None, NilType(), name
+            return None, AnyType(), name
         
         if type is None: # No acarrear errores semánticos
             return None, None, None
@@ -718,7 +728,7 @@ class MyVisitor(CompiscriptVisitor):
         print('Visita al nodo de primary')
         # result = self.visitChildren(ctx)
         value = None
-        type = NilType()
+        type = AnyType()
         var_name = None
         
         if ctx.NUMBER() or ctx.STRING(): # Si es número o cadena
@@ -754,6 +764,10 @@ class MyVisitor(CompiscriptVisitor):
         elif ctx.funAnon():
             print('Primary reconoce función anónima')
             type = self.visit(ctx.funAnon())  # Visita la función anónima
+            
+        elif ctx.array(): # Si es un arreglo
+            print('Primary reconoce arreglo')
+            type = self.visit(ctx.array()) # Visita el arreglo
             
         elif ctx.instantiation(): # Si es una instancia
             print('Primary reconoce instancia')
@@ -794,7 +808,7 @@ class MyVisitor(CompiscriptVisitor):
                 return None, None, None
 
             print(f"Llamada al método {method_name} en superclase {superclass.name}.")
-            return None, method.return_type, method_name
+            return None, method.return_type, f'super.{method_name}'
                 
         elif ctx.IDENTIFIER(): # Si es un identificador
             print('Lo reconoce como identificador')
@@ -819,7 +833,7 @@ class MyVisitor(CompiscriptVisitor):
         
         function_name = ctx.IDENTIFIER().getText()
             
-        # El tipo de retorno de la función es 'nil' por defecto.
+        # El tipo de retorno de la función es 'Nil' por defecto.
         return_type = NilType()
         
         # Crear un nuevo ámbito para los parámetros de la función y la función misma (para recursividad)
@@ -856,7 +870,7 @@ class MyVisitor(CompiscriptVisitor):
         print('Visita al nodo de función anónima')
         
         # El tipo de retorno de la función es 'nil' por defecto.
-        return_type = NilType()
+        return_type = AnyType()
         
         # Crear un nuevo ámbito para los parámetros de la función anónima
         self.symbol_table.enter_scope()
@@ -899,12 +913,9 @@ class MyVisitor(CompiscriptVisitor):
                 print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
             else:
-                parameters.append(param_name) # Agregar tipo en lugar de nombre?
+                parameters.append(AnyType())
                 print(f"Parámetro encontrado: {param_name}")
-                self.symbol_table.add(param_name, NilType())
-            
-            # Agregarlo a la tabla de símbolos con tipo 'nil'
-            self.symbol_table.add(param_name, NilType())
+                self.symbol_table.add(param_name, AnyType())
             
         return parameters
 

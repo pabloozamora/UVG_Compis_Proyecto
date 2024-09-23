@@ -22,7 +22,13 @@ class Symbol:
         
     def __repr__(self):
         return f"Symbol(name={self.name}, type={self.type}, value={self.value})"
+    
+class AnyType:
+    def __init__(self):
+        self.name = "any"
         
+    def __repr__(self):
+        return "AnyType()"        
 class NumberType:
     def __init__(self):
         self.name = "number"
@@ -122,6 +128,9 @@ class ListSymbolTable:
     def add(self, name, type, value=None):
         symbol = Symbol(name, type, value)
         self.current_scope().add(name, symbol)
+        
+    def delete(self, name):
+        self.current_scope().symbols.pop(name)
         
     def lookup(self, name):
         return self.current_scope().lookup(name)
