@@ -1,6 +1,7 @@
 from CompiscriptParser import CompiscriptParser
 from CompiscriptVisitor import CompiscriptVisitor
 from SymbolTable import ListSymbolTable, NumberType, FunctionType, NilType, StringType, BooleanType, ClassType, InstanceType, AnonymousFunctionType, AnyType
+from IntermediateCodeGenerator import ThreeAddressInstruction, IntermediateCodeGenerator
         
 def normalize_type(type_obj):
     if not isinstance(type_obj, set):
@@ -54,6 +55,8 @@ class MyVisitor(CompiscriptVisitor):
         self.symbol_table = ListSymbolTable()
         self.return_types = set()
         self.result = []
+        self.code_generator = IntermediateCodeGenerator()
+        self.current_offset = 0
         
     def getResult(self):
         return self.result
@@ -619,7 +622,12 @@ class MyVisitor(CompiscriptVisitor):
         arguments = []
         if ctx.arguments():
             arguments = self.visit(ctx.arguments())
-        
+            
+        if class_symbol.type.methods['init']:
+            if len(arguments) != len(class_symbol.type.methods['init'].arg_types):
+                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {class_name} espera {len(class_symbol.type.methods['init'].arg_types)} argumentos, pero se pasaron {len(arguments)}")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {class_name} espera {len(class_symbol.type.methods['init'].arg_types)} argumentos, pero se pasaron {len(arguments)}")
+                
         # Crear una instancia de la clase
         instance = InstanceType(class_symbol.type, arguments)
         
@@ -680,11 +688,41 @@ class MyVisitor(CompiscriptVisitor):
             
         if '.' in ctx.getText() and not (isinstance(type, NumberType) or isinstance(type, StringType)) and not ctx.getText().startswith('super'): # Se está llamando a un método o field de una clase
             # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
-            # únicamente se asume que el valor de retorno es de tipo 'Any' y advertir si se trata de una inatancia
+            # únicamente se asume que el valor de retorno es de tipo 'Any' y advertir si se trata de una instancia
             
             if not isinstance(type, InstanceType) and name != "this":
                 print(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
                 self.result.append(f'Advertencia línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
+                
+                return None, AnyType(), name
+                
+            print('RECONOCE EL PUNTO')
+            print('CALL TEXT: ', ctx.getText())
+            
+            if isinstance(type, InstanceType):
+                previousIdentifierTypeInstance = True
+                for i in range(0, len(ctx.IDENTIFIER())): # Recorrer los métodos y fields de la clase
+                    
+                    if not previousIdentifierTypeInstance:
+                        print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                        self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                        return None, None, None
+                
+                    print('CALL IDENTIFIER: ', ctx.IDENTIFIER(i).getText())
+                    
+                    field_name = ctx.IDENTIFIER(i).getText()
+                    
+                    print('FIELD NAME: ', field_name)
+                    print(type.class_type.superclass.get_method(field_name))
+                    if not type.class_type.get_field(field_name) and not type.class_type.get_method(field_name) and not type.class_type.superclass.get_field(field_name) and not type.class_type.superclass.get_method(field_name):
+                        print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
+                        self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
+                        return None, None, None
+                    
+                    previousIdentifierTypeInstance = type.class_type.get_field(field_name) or type.class_type.get_method(field_name) or type.class_type.superclass.get_field(field_name) or type.class_type.superclass.get_method(field_name)
+                    previousIdentifierTypeInstance = isinstance(previousIdentifierTypeInstance, InstanceType)
+                    
+                    print('PREVIOUS IDENTIFIER TYPE: ', previousIdentifierTypeInstance)
             
             return None, AnyType(), name
         

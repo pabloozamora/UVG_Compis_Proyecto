@@ -22,18 +22,18 @@
   }
   
   .text-area {
-    width: 500px;
+    width: 765px;
     padding: 10px;
     border: none;
     outline: none;
     font-family: monospace;
     resize: none;
-    line-height: 1.5;
+    line-height: 19.5px;
     max-height: 250px; /* Altura máxima para la textarea */
     overflow-y: auto; /* Permite el desplazamiento vertical */
   }
   
   .line-numbers > div {
-    height: 1.5em; /* Match the line-height of the textarea */
+    line-height: 1.5em; /* Match the line-height of the textarea */
   }
   

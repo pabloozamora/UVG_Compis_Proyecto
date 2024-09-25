@@ -15,10 +15,11 @@ class SymbolTable:
             return None
         
 class Symbol:
-    def __init__(self, name, type, value=None):
+    def __init__(self, name, type, value=None, code=None):
         self.name = name
         self.type = type
         self.value = value
+        self.code = code
         
     def __repr__(self):
         return f"Symbol(name={self.name}, type={self.type}, value={self.value})"

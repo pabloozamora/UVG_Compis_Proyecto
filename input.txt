@@ -1,4 +1,3 @@
-
 class Persona {
   init(nombre, edad) {
     this.nombre = nombre;
