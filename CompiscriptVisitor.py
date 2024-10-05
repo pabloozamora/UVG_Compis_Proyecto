@@ -69,6 +69,16 @@ class CompiscriptVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CompiscriptParser#breakStmt.
+    def visitBreakStmt(self, ctx:CompiscriptParser.BreakStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#continueStmt.
+    def visitContinueStmt(self, ctx:CompiscriptParser.ContinueStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
         return self.visitChildren(ctx)

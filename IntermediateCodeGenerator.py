@@ -1,5 +1,3 @@
-import uuid
-
 class ThreeAddressInstruction:
     def __init__(self, op, dest=None, arg1=None, arg2=None, next=None):
         self.op = op  # Operación, como ADD, SUB, etc.
@@ -32,7 +30,6 @@ class JumpInstruction:
 class IntermediateCodeGenerator:
     def __init__(self):
         self.instructions = []
-        self.temp_count = 0
         self.label_count = 0
         self.global_pointer = 0
         self.local_pointer = 0
@@ -45,10 +42,6 @@ class IntermediateCodeGenerator:
     def add_jump_instruction(self, label, arg1=None, arg2=None):
         instruction = JumpInstruction(label, arg1, arg2)
         self.instructions.append(instruction)
-        
-    def new_temp(self):
-        self.temp_count += 1
-        return f"{uuid.uuid4()}-t{self.temp_count}"
     
     def new_label(self):
         self.label_count += 1

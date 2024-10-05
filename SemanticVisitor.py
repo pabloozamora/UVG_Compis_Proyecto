@@ -69,8 +69,8 @@ class SemanticVisitor(CompiscriptVisitor):
         self.result = []
         self.hasErrors = False
         self.code_generator = IntermediateCodeGenerator()
-        self.if_labels_true = []
-        self.if_labels_false = []
+        self.loop_labels = []
+        self.loop_labels_false = []
         
     def getResult(self):
         return self.result
@@ -215,16 +215,16 @@ class SemanticVisitor(CompiscriptVisitor):
             # Si hay una expresión de inicialización, determinar el tipo de la variable y su valor
             if ctx.expression():
                 var_value, var_type, _ = self.visit(ctx.expression())
+            
+            # Crear un símbolo para la variable
+            if var_type is not None:
+                symbol = self.symbol_table.add(var_name, var_type, value=var_value)
+                #print(f"\nVariable {var_name} de tipo {var_type} y valor {var_value} declarada\n")
                 
                 # Código intermedio
                 
                 if not self.hasErrors:
-                    self.code_generator.add_instruction(op='ASSIGN', dest=var_name, arg1=var_value)
-            
-            # Crear un símbolo para la variable
-            if var_type is not None:
-                symbol = self.symbol_table.add(var_name, var_type, var_value)
-                #print(f"\nVariable {var_name} de tipo {var_type} y valor {var_value} declarada\n")
+                    self.code_generator.add_instruction(op='=', dest=symbol, arg1=var_value)
                 
             
         
@@ -233,22 +233,7 @@ class SemanticVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#statement.
     def visitStatement(self, ctx:CompiscriptParser.StatementContext):
-        
-        if (ctx.ifStmt()):
-            
-            # Se trata de una declaración de sentencia if, se empiezan a crear labels
-            next_label = self.code_generator.new_label()
-            self.if_labels_false.append(next_label)
-            
-            return self.visit(ctx.ifStmt())
-            
-            # Agregar label para el siguiente bloque de código
-            self.code_generator.add_label(next_label)
-        
-        else:
-        
-            #print('Llegó a un nodo de declaración de sentencia')
-            return self.visitChildren(ctx)
+        return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiscriptParser#exprStmt.
@@ -274,6 +259,19 @@ class SemanticVisitor(CompiscriptVisitor):
         # Los índices de los hijos importantes en `for`:
         cond_index = 3
         update_index = 5
+        
+        # Código intermedio
+        if not self.hasErrors:
+            
+            # Label para el inicio del bucle
+            loop_label = self.code_generator.new_label()
+            
+            # Agregar la etiqueta de entrada del ciclo a la lista de ciclos
+            self.loop_labels.append(loop_label)
+            
+            # Agregar label de inicio del bucle
+            self.code_generator.add_label(loop_label)
+            
 
         # Verificar si hay una expresión condicional en el medio 
         
@@ -287,11 +285,35 @@ class SemanticVisitor(CompiscriptVisitor):
                     #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
                     self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'for' debe ser de tipo booleano")
                     self.hasErrors = True
+                    
+                # Código intermedio
+                
+                if not self.hasErrors:
+                        
+                        # Label para cuando la condición es falsa
+                        false_label = self.code_generator.new_label()
+                        
+                        # Agregar la etiqueta de salida del ciclo a la lista de ciclos
+                        self.loop_labels_false.append(false_label)
+                        
+                        # Agregar salto para el if de MIPS
+                        # Si la condición es falsa, saltar a la etiqueta false_label
+                        self.code_generator.add_jump_instruction(false_label, arg1=cond_value, arg2=0)
             
         else :
             
             #print("No hay expresión condicional en el bucle 'for'. Ejecutará hasta un 'break' o 'return'.")
             update_index = 4  # Si no hay condición, el índice de actualización cambia
+            
+             # Código intermedio
+                
+            if not self.hasErrors:
+                    
+                    # Label para cuando la condición es falsa
+                    false_label = self.code_generator.new_label()
+                    
+                    # Agregar la etiqueta de salida del ciclo a la lista de ciclos
+                    self.loop_labels_false.append(false_label)
             
         # Visitar la expresión final (si existe y no hay error sintáctico)
         if ctx.getChild(update_index):
@@ -303,6 +325,22 @@ class SemanticVisitor(CompiscriptVisitor):
         # Visitar el cuerpo del bucle (si no hay error sintáctico)
         if ctx.statement():
             self.visit(ctx.statement())
+            
+            # Código intermedio
+            if not self.hasErrors:
+                    
+                    # Agregar salto para regresar al inicio del bucle
+                    self.code_generator.add_jump_instruction(loop_label)
+                    
+                    # Agregar label falso para cuando la condición es falsa
+                    self.code_generator.add_label(false_label)
+                    print('false label: ', false_label)
+        
+                    # Quitar la etiqueta de salida del ciclo actual
+                    self.loop_labels_false.pop()
+                    
+                    # Quitar la etiqueta de entrada del ciclo actual
+                    self.loop_labels.pop()
         
         # Salir del ámbito del ciclo for
         self.symbol_table.exit_scope()
@@ -401,6 +439,18 @@ class SemanticVisitor(CompiscriptVisitor):
         # Agregar un símbolo únicamente como indicador si un "break" o "continue" es adecuado
         self.symbol_table.add('while', AnyType())
         
+        # Código intermedio
+        if not self.hasErrors:
+            
+            # Label para el inicio del bucle
+            loop_label = self.code_generator.new_label()
+            
+            # Agregar la etiqueta de entrada del ciclo a la lista de ciclos
+            self.loop_labels.append(loop_label)
+            
+            # Agregar label de inicio del bucle
+            self.code_generator.add_label(loop_label)
+        
         # Evaluar la condición del while
         condition_value, condition_type, _ = self.visit(ctx.expression())
         
@@ -409,15 +459,88 @@ class SemanticVisitor(CompiscriptVisitor):
             #print(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
             self.result.append(f"Adevertencia línea {ctx.start.line}, posición {ctx.start.column}: la condición del bucle 'while' debe ser de tipo booleano")
             
+        # Código intermedio
+        if not self.hasErrors:
+                
+                # Label para cuando la condición es falsa
+                false_label = self.code_generator.new_label()
+                
+                # Almacenar la etiqueta de salida en la lista de ciclos
+                self.loop_labels_false.append(false_label)
+                
+                # Agregar salto para el if de MIPS
+                # Si la condición es falsa, saltar a la etiqueta false_label
+                self.code_generator.add_jump_instruction(false_label, arg1=condition_value, arg2=0)
+            
         # Visitar el cuerpo del bucle (solamente si no hay error sintáctico)
         if ctx.statement():
             self.visit(ctx.statement())
+            
+            # Código intermedio
+            if not self.hasErrors:
+                    
+                    # Agregar salto para regresar al inicio del bucle
+                    self.code_generator.add_jump_instruction(loop_label)
+                    
+                    # Agregar label falso para cuando la condición es falsa
+                    self.code_generator.add_label(false_label)
         
-        # Salir del ámbito del ciclo while
-        self.symbol_table.exit_scope()
+                    # Salir del ámbito del ciclo while
+                    self.symbol_table.exit_scope()
+                    
+                    # Quitar la etiqueta de salida del ciclo actual
+                    self.loop_labels_false.pop()
+        
+        # Quitar la etiqueta de entrada del ciclo actual
+        self.loop_labels.pop()
         
         return None
-
+    
+    def visitBreakStmt(self, ctx: CompiscriptParser.BreakStmtContext):
+        # Verificar si se está en un contexto de ciclo
+        current_while = self.symbol_table.lookup("while")
+        current_for = self.symbol_table.lookup("for")
+        
+        if not current_while and not current_for:
+            #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'break' se está utilizando fuera de un ciclo.")
+            self.hasErrors = True
+            return None, None, None
+        
+        # Código intermedio
+        
+        if not self.hasErrors:
+            
+            # Obtener la última etiqueta de salida del ciclo
+            false_label = self.loop_labels_false[-1]
+            
+            # Código intermedio: saltar a la etiqueta de salida del ciclo
+            self.code_generator.add_jump_instruction(false_label)
+            
+        return
+    
+    def visitContinueStmt(self, ctx: CompiscriptParser.ContinueStmtContext):
+        # Verificar si se está en un contexto de ciclo
+        current_while = self.symbol_table.lookup("while")
+        current_for = self.symbol_table.lookup("for")
+        
+        if not current_while and not current_for:
+            #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'break' se está utilizando fuera de un ciclo.")
+            self.hasErrors = True
+            return None, None, None
+        
+        # Código intermedio
+        
+        if not self.hasErrors:
+            
+            # Obtener la última etiqueta de inicio del ciclo
+            loop_label = self.loop_labels[-1]
+            
+            # Código intermedio: saltar a la etiqueta de inicio del ciclo
+            self.code_generator.add_jump_instruction(loop_label)
+        
+        return
 
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
@@ -488,11 +611,10 @@ class SemanticVisitor(CompiscriptVisitor):
                     var_value, var_type, _ = self.visit(ctx.assignment())
                     # Determinar el tipo del valor que está siendo asignado
                     symbol.type = var_type
-                    symbol.value = var_value
                     #print(f"Variable {var_name} de tipo {var_type} asignada con valor {var_value}")
                     
                     if not self.hasErrors:
-                        self.code_generator.add_instruction(op='ASSIGN', dest=var_name, arg1=var_value)
+                        self.code_generator.add_instruction(op='=', dest=symbol, arg1=var_value)
                 
         elif ctx.logic_or(): # Se sigue con logic_or
             
@@ -537,8 +659,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
         # Código intermedio
         if not self.hasErrors and len(ctx.logic_and()) > 1:
-            result_temp_name = self.code_generator.new_temp()
-            self.symbol_table.add_temp(result_temp_name)
+            result_temp_name = self.symbol_table.add_temp()
             
             # Si se llega a este punto, todas las condiciones son falsas
             false_label = self.code_generator.new_label()
@@ -593,8 +714,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
         # Código intermedio
         if not self.hasErrors and len(ctx.equality()) > 1:
-            result_temp_name = self.code_generator.new_temp()
-            self.symbol_table.add_temp(result_temp_name)
+            result_temp_name = self.symbol_table.add_temp()
             
             # Si se llega a este punto, todas las condiciones son verdaderas
             true_label = self.code_generator.new_label()
@@ -637,14 +757,36 @@ class SemanticVisitor(CompiscriptVisitor):
             # Código intermedio
             
             if not self.hasErrors:
-                if operator == '==':
-                    op = 'EQ'
-                elif operator == '!=':
-                    op = 'NE'
                 
-                result_temp_name = self.code_generator.new_temp()
-                self.symbol_table.add_temp(result_temp_name)
-                self.code_generator.add_instruction(op=op, dest=result_temp_name, arg1=left_value, arg2=right_value)
+                if operator == '==':
+                    
+                    true_label = self.code_generator.new_label() # Label para cuando la expresión es verdadera
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
+                    
+                    # Si es igual, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value)
+                    
+                    # Si no es igual, el resultado es falso
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(true_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    
+                elif operator == '!=':
+                    false_label = self.code_generator.new_label() # Label para cuando la expresión es falsa
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
+                    
+                    # Si es igual, el resultado es falso
+                    self.code_generator.add_jump_instruction(false_label, arg1=left_value, arg2=right_value)
+                    
+                    # Si no es igual, el resultado es verdadero
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    # Agregar label falso
+                    self.code_generator.add_label(false_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
                 
                 left_value = result_temp_name
             
@@ -682,10 +824,9 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 
                 if operator == '<':
-                    less_than_temp_name = self.code_generator.new_temp()
+                    less_than_temp_name = self.symbol_table.add_temp()
                     
-                    result_temp_name = self.code_generator.new_temp() # Temporal para guardar el resultado de la comparación
-                    self.symbol_table.add_temp(result_temp_name)
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
                     # Verificar si es menor que
                     self.code_generator.add_instruction(op='SLT', dest=less_than_temp_name, arg1=left_value, arg2=right_value)
@@ -705,10 +846,9 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(true_label)
                     
                 elif operator == '<=':
-                    less_than_temp_name = self.code_generator.new_temp()
+                    less_than_temp_name = self.symbol_table.add_temp()
                     
-                    result_temp_name = self.code_generator.new_temp() # Temporal para guardar el resultado de la comparación
-                    self.symbol_table.add_temp(result_temp_name)
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
                     # Verificar si a > b (o b < a)
                     self.code_generator.add_instruction(op='SLT', dest=less_than_temp_name, arg1=right_value, arg2=left_value)
@@ -728,10 +868,9 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(true_label)
                     
                 elif operator == '>':
-                    greater_than_temp_name = self.code_generator.new_temp()
+                    greater_than_temp_name = self.symbol_table.add_temp()
                     
-                    result_temp_name = self.code_generator.new_temp() # Temporal para guardar el resultado de la comparación
-                    self.symbol_table.add_temp(result_temp_name)
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
                     # Verificar si a > b (o b < a)
                     self.code_generator.add_instruction(op='SLT', dest=greater_than_temp_name, arg1=right_value, arg2=left_value)
@@ -751,10 +890,9 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(true_label)
                     
                 elif operator == '>=':
-                    greater_than_temp_name = self.code_generator.new_temp()
+                    greater_than_temp_name = self.symbol_table.add_temp()
                     
-                    result_temp_name = self.code_generator.new_temp() # Temporal para guardar el resultado de la comparación
-                    self.symbol_table.add_temp(result_temp_name)
+                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
                     # Verificar si a < b
                     self.code_generator.add_instruction(op='SLT', dest=greater_than_temp_name, arg1=left_value, arg2=right_value)
@@ -774,11 +912,6 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(true_label)
                 
                 left_value = result_temp_name
-                
-                # Si se está dentro de la condición de un if, agregar instrucciones de salto
-                if len(self.if_labels_true) > 0:
-                    self.code_generator.add_jump_instruction(self.if_labels_true[-1], if_op=left_value)
-                    self.code_generator.add_jump_instruction(self.if_labels_false[-1])
             
         return left_value, left_type, left_name
 
@@ -825,8 +958,7 @@ class SemanticVisitor(CompiscriptVisitor):
             # Código intermedio
                 
             if not self.hasErrors:
-                result_temp_name = self.code_generator.new_temp()
-                self.symbol_table.add_temp(result_temp_name)
+                result_temp_name = self.symbol_table.add_temp()
                 self.code_generator.add_instruction(op=op, dest=result_temp_name, arg1=left_value, arg2=right_value)
                 
                 left_value = result_temp_name
@@ -864,8 +996,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     op = 'MOD'
                 
                 # Temporal para el resultado
-                result_temp_name = self.code_generator.new_temp()
-                self.symbol_table.add_temp(result_temp_name)
+                result_temp_name = self.symbol_table.add_temp()
                 self.code_generator.add_instruction(op=op, dest=result_temp_name, arg1=left_value, arg2=right_value)
                 
                 left_value = result_temp_name
@@ -946,8 +1077,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 if not self.hasErrors:
                     
-                    temp_name = self.code_generator.new_temp()
-                    self.symbol_table.add_temp(temp_name, value)
+                    temp_name = self.code_generator.symbol_table.add_temp()
                     self.code_generator.add_instruction(op='NOR', dest=temp_name, arg1=value)
                     result_value = temp_name
             
@@ -963,8 +1093,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 if not self.hasErrors:
                     
-                    temp_name = self.code_generator.new_temp()
-                    self.symbol_table.add_temp(temp_name, value)
+                    temp_name = self.symbol_table.add_temp()
                     self.code_generator.add_instruction(op='NEG', dest=temp_name, arg1=value)
                     result_value = temp_name
             
@@ -1165,7 +1294,7 @@ class SemanticVisitor(CompiscriptVisitor):
             symbol = self.symbol_table.lookup(var_name)
             
             if symbol:
-                value = symbol.value
+                value = symbol
                 type = symbol.type
                 #print(f"{var_name} encontrada con tipo {type} y valor {value}")
                 

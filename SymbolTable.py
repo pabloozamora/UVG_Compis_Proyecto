@@ -1,3 +1,4 @@
+import uuid
 class SymbolTable:
     def __init__(self, parent=None):
         self.symbols = {}
@@ -15,22 +16,23 @@ class SymbolTable:
             return None
         
 class Symbol:
-    def __init__(self, name, type, value=None):
+    def __init__(self, name, type, global_offset=None, local_offset=None, value=None):
         self.name = name
         self.type = type
+        self.global_offset = global_offset
+        self.local_offset = local_offset
         self.value = value
         
     def __repr__(self):
-        return f"Symbol(name={self.name}, type={self.type}, value={self.value})"
+        return f"Symbol(name={self.name}, type={self.type}, GP[{self.global_offset}], LP[{self.local_offset}])"
     
-class TempSymbol:
-    def __init__(self, name, value=None, offset=None):
-        self.name = name
-        self.value = value
-        self.offset = offset
+class TempSymbol(Symbol):
+    def __init__(self, name, global_offset=None, local_offset=None, value=None):
+        # Llamar al constructor de la clase base (Symbol)
+        super().__init__(name, type="temp", global_offset=global_offset, local_offset=local_offset, value=value)
         
     def __repr__(self):
-        return f"TempSymbol(name={self.name}, type={self.type})"
+        return f'{self.name.split("-")[:1][0]}'
     
 class AnyType:
     def __init__(self):
@@ -122,6 +124,9 @@ class InstanceType:
 class ListSymbolTable:
     def __init__(self):
         self.scopes = [SymbolTable()]
+        self.current_global_offset = 0
+        self.current_local_offset = 0
+        self.temp_count = 0
         
     def enter_scope(self):
         parent_scope = self.current_scope()
@@ -134,9 +139,10 @@ class ListSymbolTable:
     def current_scope(self):
         return self.scopes[-1]
     
-    def add(self, name, type, value=None):
-        symbol = Symbol(name, type, value)
+    def add(self, name, type, global_offset=None, local_offset=None, value=None):
+        symbol = Symbol(name, type, global_offset, local_offset, value)
         self.current_scope().add(name, symbol)
+        return symbol
         
     def delete(self, name):
         self.current_scope().symbols.pop(name)
@@ -144,7 +150,9 @@ class ListSymbolTable:
     def lookup(self, name):
         return self.current_scope().lookup(name)
     
-    def add_temp(self, name, value=None, offset=None):
-        symbol = TempSymbol(name, value, offset)
+    def add_temp(self, global_offset=None, local_offset=None, value=None):
+        name = f"t{self.temp_count}-{uuid.uuid4()}"
+        symbol = TempSymbol(name, global_offset, local_offset, value)
         self.current_scope().add(name, symbol)
-        return name.split("-")[:1]
+        self.temp_count += 1
+        return symbol

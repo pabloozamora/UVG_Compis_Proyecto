@@ -44,6 +44,10 @@ def main():
     # Renderizar el árbol sintáctico
     # print("Árbol de análisis sintáctico:\n")
     print(tree.toStringTree(recog=parser), "\n")
+    
+    if error_listener.errors:
+        print("El programa contiene errores sintácticos.")
+        return
         
     semanticVisitor = SemanticVisitor()
     semanticVisitor.visit(tree)

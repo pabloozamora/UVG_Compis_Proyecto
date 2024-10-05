@@ -116,6 +116,24 @@ class CompiscriptListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CompiscriptParser#breakStmt.
+    def enterBreakStmt(self, ctx:CompiscriptParser.BreakStmtContext):
+        pass
+
+    # Exit a parse tree produced by CompiscriptParser#breakStmt.
+    def exitBreakStmt(self, ctx:CompiscriptParser.BreakStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiscriptParser#continueStmt.
+    def enterContinueStmt(self, ctx:CompiscriptParser.ContinueStmtContext):
+        pass
+
+    # Exit a parse tree produced by CompiscriptParser#continueStmt.
+    def exitContinueStmt(self, ctx:CompiscriptParser.ContinueStmtContext):
+        pass
+
+
     # Enter a parse tree produced by CompiscriptParser#block.
     def enterBlock(self, ctx:CompiscriptParser.BlockContext):
         pass
