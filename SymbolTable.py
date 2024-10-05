@@ -15,14 +15,22 @@ class SymbolTable:
             return None
         
 class Symbol:
-    def __init__(self, name, type, value=None, code=None):
+    def __init__(self, name, type, value=None):
         self.name = name
         self.type = type
         self.value = value
-        self.code = code
         
     def __repr__(self):
         return f"Symbol(name={self.name}, type={self.type}, value={self.value})"
+    
+class TempSymbol:
+    def __init__(self, name, value=None, offset=None):
+        self.name = name
+        self.value = value
+        self.offset = offset
+        
+    def __repr__(self):
+        return f"TempSymbol(name={self.name}, type={self.type})"
     
 class AnyType:
     def __init__(self):
@@ -135,3 +143,8 @@ class ListSymbolTable:
         
     def lookup(self, name):
         return self.current_scope().lookup(name)
+    
+    def add_temp(self, name, value=None, offset=None):
+        symbol = TempSymbol(name, value, offset)
+        self.current_scope().add(name, symbol)
+        return name.split("-")[:1]
