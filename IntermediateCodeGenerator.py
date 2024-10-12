@@ -30,13 +30,36 @@ class JumpInstruction:
             return f"if {self.arg1} == {self.arg2} goto {self.label}"
         return f"goto {self.label}"
     
+class ParamInstruction:
+    def __init__(self, param):
+        self.param = param
+        
+    def __str__(self):
+        return f"param {self.param}"
+    
+class ReturnInstruction:
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+        return "return"
+    
+class CallInstruction:
+    def __init__(self, label, arguments):
+        self.label = label
+        self.arguments = arguments
+        
+    def __str__(self):
+        if self.arguments:
+            return f"call {self.label}, {', '.join(str(argument) for argument in self.arguments)}, {len(self.arguments)}"
+        return f"call {self.label}"
+        
+    
 class IntermediateCodeGenerator:
     def __init__(self):
         self.instructions = []
         self.label_count = 0
-        self.global_pointer = 0
-        self.local_pointer = 0
-        self.label_stack = []
+        self.labels = []
         
     def add_instruction(self, op, dest=None, arg1=None, arg2=None, result=None):
         instruction = ThreeAddressInstruction(op, dest, arg1, arg2, result)
@@ -45,10 +68,27 @@ class IntermediateCodeGenerator:
     def add_jump_instruction(self, label, arg1=None, arg2=None, op=None):
         instruction = JumpInstruction(label, arg1, arg2, op)
         self.instructions.append(instruction)
+        
+    def add_param_instruction(self, param):
+        instruction = ParamInstruction(param)
+        self.instructions.append(instruction)
+        
+    def add_return_instruction(self):
+        instruction = ReturnInstruction()
+        self.instructions.append(instruction)
+        
+    def add_call_instruction(self, label, arguments):
+        instruction = CallInstruction(label, arguments)
+        self.instructions.append(instruction)
     
-    def new_label(self):
-        self.label_count += 1
-        return f"L{self.label_count}"
+    def new_label(self, name=None):
+        if name:
+            label = f'L_{name}'
+            self.labels.append(label)
+            return label
+        else:
+            self.label_count += 1
+            return f"L{self.label_count}"
     
     def add_label(self, label):
         self.instructions.append(Label(label))

@@ -60,10 +60,5 @@ def main():
     
     print(semanticVisitor.code_generator)
     
-    # Iniciar generación de código intermedio
-    
-    #tacVisitor = TACVisitor(semanticVisitor.symbol_table)
-    #tacVisitor.visit(tree)
-    
 if __name__ == '__main__':
     main()

@@ -1,11 +1,18 @@
 import uuid
+
+POINTER_SIZE = 4
 class SymbolTable:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, function_scope=False):
         self.symbols = {}
         self.parent = parent
+        self.function_scope = function_scope
+        self.scope_offset = parent.scope_offset if parent and not self.function_scope else 0
         
     def add(self, name, symbol):
         self.symbols[name] = symbol
+        
+        if not (isinstance(symbol.type, FunctionType) or isinstance(symbol.type, AnonymousFunctionType)):
+            self.scope_offset += POINTER_SIZE
         
     def lookup(self, name):
         if name in self.symbols:
@@ -15,24 +22,32 @@ class SymbolTable:
         else:
             return None
         
+    def in_function_scope(self):
+        if self.function_scope:
+            return True
+        elif self.parent:
+            return self.parent.in_function_scope()
+        else:
+            return False
+        
 class Symbol:
-    def __init__(self, name, type, global_offset=None, local_offset=None, value=None):
+    def __init__(self, name, type, offset=None, scope="GP", value=None):
         self.name = name
         self.type = type
-        self.global_offset = global_offset
-        self.local_offset = local_offset
+        self.offset = offset
+        self.scope = scope
         self.value = value
         
     def __repr__(self):
-        return f"Symbol(name={self.name}, type={self.type}, GP[{self.global_offset}], LP[{self.local_offset}])"
+        return f"Symbol(name={self.name}, type={self.type}, {self.scope}[{self.offset}])"
     
 class TempSymbol(Symbol):
-    def __init__(self, name, global_offset=None, local_offset=None, value=None):
+    def __init__(self, name, offset=None, scope="GP", value=None):
         # Llamar al constructor de la clase base (Symbol)
-        super().__init__(name, type="temp", global_offset=global_offset, local_offset=local_offset, value=value)
+        super().__init__(name, type="temp", offset=offset, scope=scope, value=value)
         
     def __repr__(self):
-        return f'{self.name.split("-")[:1][0]}'
+        return f'{self.name.split("-")[:1][0]} ({self.scope}[{self.offset}])'
     
 class AnyType:
     def __init__(self):
@@ -43,6 +58,7 @@ class AnyType:
 class NumberType:
     def __init__(self):
         self.name = "number"
+        self.size = 4
         
     def __repr__(self):
         return "NumberType()"
@@ -50,6 +66,7 @@ class NumberType:
 class BooleanType:
     def __init__(self):
         self.name = "boolean"
+        self.size = 1
         
     def __repr__(self):
         return "BooleanType()"
@@ -57,6 +74,7 @@ class BooleanType:
 class StringType:
     def __init__(self):
         self.name = "string"
+        self.size = 255
         
     def __repr__(self):
         return "StringType()"
@@ -64,6 +82,7 @@ class StringType:
 class NilType:
     def __init__(self):
         self.name = "nil"
+        self.size = 1
         
     def __repr__(self):
         return "NilType()"
@@ -90,6 +109,7 @@ class ClassType:
     def __init__(self, name, superclass=None):
         self.name = name
         self.superclass = superclass
+        self.current_offset = 0
         self.methods = {}
         self.fields = {}
         
@@ -97,7 +117,8 @@ class ClassType:
         self.methods[name] = method_type
 
     def add_field(self, name, field_type):
-        self.fields[name] = field_type
+        self.fields[name] = {'type': field_type, 'offset': self.current_offset}
+        self.current_offset += POINTER_SIZE
 
     def get_method(self, name):
         return self.methods.get(name)
@@ -114,6 +135,7 @@ class InstanceType:
         self.class_type = class_type
         self.fields = {}
         self.init_arguments = init_arguments or []
+        self.size = 4
         
     def get_field(self, name):
         return self.fields.get(name)
@@ -124,23 +146,30 @@ class InstanceType:
 class ListSymbolTable:
     def __init__(self):
         self.scopes = [SymbolTable()]
-        self.current_global_offset = 0
-        self.current_local_offset = 0
         self.temp_count = 0
         
-    def enter_scope(self):
+    def enter_scope(self, function_scope=False):
         parent_scope = self.current_scope()
-        new_scope = SymbolTable(parent=parent_scope)
+        new_scope = SymbolTable(parent=parent_scope, function_scope=function_scope)
         self.scopes.append(new_scope)
         
-    def exit_scope(self):
-        self.scopes.pop()
+    def exit_scope(self): # Tomar en cuenta si el scope actual es de función y si el scope hijo es de función
+        exiting_scope = self.scopes.pop()
+        if not exiting_scope.in_function_scope():
+            self.current_scope().scope_offset = exiting_scope.scope_offset
     
     def current_scope(self):
         return self.scopes[-1]
     
-    def add(self, name, type, global_offset=None, local_offset=None, value=None):
-        symbol = Symbol(name, type, global_offset, local_offset, value)
+    def in_function_scope(self):
+        return self.current_scope().in_function_scope()
+    
+    def add(self, name, type, value=None):
+        symbol_offset = self.current_scope().scope_offset
+        symbol_scope = 'GP'
+        if self.in_function_scope():
+            symbol_scope = 'SP'
+        symbol = Symbol(name, type, offset=symbol_offset, scope=symbol_scope, value=value)
         self.current_scope().add(name, symbol)
         return symbol
         
@@ -150,9 +179,13 @@ class ListSymbolTable:
     def lookup(self, name):
         return self.current_scope().lookup(name)
     
-    def add_temp(self, global_offset=None, local_offset=None, value=None):
+    def add_temp(self, value=None):
         name = f"t{self.temp_count}-{uuid.uuid4()}"
-        symbol = TempSymbol(name, global_offset, local_offset, value)
+        symbol_offset = self.current_scope().scope_offset
+        symbol_scope = 'GP'
+        if self.in_function_scope():
+            symbol_scope = 'SP'
+        symbol = TempSymbol(name, offset=symbol_offset, scope=symbol_scope, value=value)
         self.current_scope().add(name, symbol)
         self.temp_count += 1
         return symbol

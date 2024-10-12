@@ -421,10 +421,29 @@ class SemanticVisitor(CompiscriptVisitor):
             return_value, return_type, return_name = self.visit(ctx.expression())
             #print(f"Tipo de retorno encontrado: {return_type}")
             self.return_types.add(return_type)
+            
+            # ------- Código intermedio --------------
+        
+            if not self.hasErrors:
+                
+                # Agregar el valor de retorno a SP
+                return_temp = self.symbol_table.add_temp()
+                self.code_generator.add_instruction(op='=', dest=return_temp, arg1=return_value)
+                
+                # Agregar instrucción de retorno
+                self.code_generator.add_return_instruction()
+                
+            # ----------------------------------------
+            
         else:
             # Si no hay expresión, es un retorno implícito de 'Nil'
             self.return_types.add(NilType())
             #print("Retorno implícito de 'Nil'")
+            
+            if not self.hasErrors:
+                
+                # Agregar instrucción de retorno
+                self.code_generator.add_return_instruction()
             
         return self.return_types
 
@@ -544,12 +563,9 @@ class SemanticVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
-        self.code_generator.local_pointer = 0
         self.symbol_table.enter_scope()
         result = self.visitChildren(ctx)
         self.symbol_table.exit_scope()
-        self.code_generator.global_pointer += self.code_generator.local_pointer
-        self.code_generator.local_pointer = 0
         return result
 
 
@@ -935,6 +951,8 @@ class SemanticVisitor(CompiscriptVisitor):
                 string_types = types_are_string(left_type, right_type) # Tomar en consideración concatencación?
                     
                 if not numeric_types:
+                    print('left type: ', left_type)
+                    print('right type: ', right_type)
                     #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
                     self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser numéricos")
                     self.hasErrors = True
@@ -1111,16 +1129,41 @@ class SemanticVisitor(CompiscriptVisitor):
         
         #print(ctx.getText())
         
-        if value == 'this': # Se está llamando a un método o field de la clase actual
+        if type is None: # No acarrear errores semánticos
+            return None, None, None
+        
+        if name == 'this': # Se está haciendo referencia a un método o field de la clase actual
             
-            # Verificar si existe dicha clase actual (this)
-            current_class = self.symbol_table.lookup("this")
+            # Si no hay IDENTIFIER, se está llevando el "this" puro a la izquierda de un assignment
+            # En cambio, si hay al menos un IDENTIFIER, significa que se están buscando propiedades de propiedades
             
-            if not current_class:
-                #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
-                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
-                self.hasErrors = True
-                return None, None, None
+            if ctx.IDENTIFIER():
+                previousIdentifierTypeInstance = True
+                for i in range(0, len(ctx.IDENTIFIER())):
+                        
+                        if not previousIdentifierTypeInstance:
+                            #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                            return None, None, None
+                    
+                        #print('CALL IDENTIFIER: ', ctx.IDENTIFIER(i).getText())
+                        
+                        field_name = ctx.IDENTIFIER(i).getText()
+                        
+                        #print('FIELD NAME: ', field_name)
+                        #print(type.class_type.superclass.get_method(field_name))
+                        if not type.get_field(field_name) and not type.class_type.superclass.get_field(field_name): # Verificar si la propiedad ya está en la clase
+                            #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
+                            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}:  la propiedad '{field_name}' no ha sido declarada en la clase {type.name}")
+                            return None, None, None
+                        
+                        
+                        previousIdentifierTypeInstance = type.get_field(field_name).type
+                        previousIdentifierTypeInstance = isinstance(previousIdentifierTypeInstance, InstanceType)
+                        
+                        #print('PREVIOUS IDENTIFIER TYPE: ', previousIdentifierTypeInstance)
+            
+            return value, type, name
             
         if '.' in ctx.getText() and not (isinstance(type, NumberType) or isinstance(type, StringType)) and not ctx.getText().startswith('super'): # Se está llamando a un método o field de una clase
             # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
@@ -1160,9 +1203,6 @@ class SemanticVisitor(CompiscriptVisitor):
             
             return None, AnyType(), name """
         
-        if type is None: # No acarrear errores semánticos
-            return None, None, None
-        
         # Si no se trata de una función, devolver primary
         if not (isinstance(type, FunctionType) or isinstance(type, AnonymousFunctionType)):
             return value, type, name
@@ -1193,8 +1233,17 @@ class SemanticVisitor(CompiscriptVisitor):
             self.result.append(f"Error semántico: La función '{name}' espera {len(function_symbol.type.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
             self.hasErrors = True
             return None, None, None
+        
+        # -- Código intermedio --
+        
+        if not self.hasErrors:
+            
+            for argument in arguments:
+                self.code_generator.add_param_instruction(argument)
+            
+            self.code_generator.add_call_instruction(label=f'L_{name}', arguments=arguments)
 
-        return None, return_type, name
+        return 'R', return_type, name
 
 
     # Visit a parse tree produced by CompiscriptParser#primary.
@@ -1207,30 +1256,55 @@ class SemanticVisitor(CompiscriptVisitor):
         
         if ctx.NUMBER():
             value = float(ctx.NUMBER().getText())
+            value_temp = self.symbol_table.add_temp()
+            self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
+            value = value_temp
             type = NumberType()
                 
         elif ctx.STRING():
             value = ctx.STRING().getText()
+            value_temp = self.symbol_table.add_temp()
+            self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
+            value = value_temp
             type = StringType()
                 
         elif ctx.expression(): # Si es una expresión
             value, type, var_name = self.visit(ctx.expression())
                 
         elif ctx.getText() == 'nil':
-            value = None
+            value = 'nil'
+            value_temp = self.symbol_table.add_temp()
+            self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
+            value = value_temp
             type = NilType()
         
         elif ctx.getText() == 'true':
-            value = True
+            value = 1
+            value_temp = self.symbol_table.add_temp()
+            self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
+            value = value_temp
             type = BooleanType()
             
         elif ctx.getText() == 'false':
-            value = False
+            value = 0
+            value_temp = self.symbol_table.add_temp()
+            self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
+            value = value_temp
             type = BooleanType()
             
         elif ctx.getText() == 'this':
-            value = 'this'
-            type = ClassType('this')
+            
+            # Verificar si existe dicha clase actual (this)
+            current_class = self.symbol_table.lookup("this")
+            
+            if not current_class:
+                #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+                self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: 'this' se está utilizando fuera de un contexto de clase.")
+                self.hasErrors = True
+                return None, None, None
+            
+            value = current_class
+            type = current_class.type
             var_name = 'this'
             
         elif ctx.funAnon():
@@ -1309,12 +1383,20 @@ class SemanticVisitor(CompiscriptVisitor):
         #print('Visita al nodo de función')
         
         function_name = ctx.IDENTIFIER().getText()
+        
+        # ------- Código intermedio --------------
+        
+        if not self.hasErrors:
+            function_label = self.code_generator.new_label(function_name)
+            self.code_generator.add_label(function_label)
             
-        # El tipo de retorno de la función es 'Nil' por defecto.
-        return_type = NilType()
+        # ----------------------------------------
+            
+        # El tipo de retorno de la función es 'Any' por defecto.
+        return_type = AnyType()
         
         # Crear un nuevo ámbito para los parámetros de la función y la función misma (para recursividad)
-        self.symbol_table.enter_scope()
+        self.symbol_table.enter_scope(function_scope=True)
         
         # Obtener los parámetros de la función
         parameters = []
@@ -1322,7 +1404,10 @@ class SemanticVisitor(CompiscriptVisitor):
             parameters = self.visit(ctx.parameters())
         
         # Crear un símbolo para la función
-        function_type = FunctionType(return_type, parameters)
+        
+        parameters_types = [param.type for param in parameters]
+        
+        function_type = FunctionType(return_type, parameters_types)
         self.symbol_table.add(function_name, function_type)
             
         # Visitar el bloque de la función
@@ -1350,7 +1435,7 @@ class SemanticVisitor(CompiscriptVisitor):
         return_type = AnyType()
         
         # Crear un nuevo ámbito para los parámetros de la función anónima
-        self.symbol_table.enter_scope()
+        self.symbol_table.enter_scope(function_scope=True)
         
         # Obtener los parámetros de la función anónima
         parameters = []
@@ -1391,9 +1476,17 @@ class SemanticVisitor(CompiscriptVisitor):
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el parámetro {param_name} ya ha sido declarado en este ámbito")
                 self.hasErrors = True
             else:
-                parameters.append(AnyType())
+
                 #print(f"Parámetro encontrado: {param_name}")
-                self.symbol_table.add(param_name, AnyType())
+                parameter_symbol = self.symbol_table.add(param_name, AnyType())
+                parameters.append(parameter_symbol)
+                
+                # ------- Código intermedio --------------
+                
+                # Agregar la instrucción param para saber en dónde se encuentra en el stack
+                
+                if not self.hasErrors:
+                    self.code_generator.add_param_instruction(parameter_symbol)
             
         return parameters
 
@@ -1405,9 +1498,9 @@ class SemanticVisitor(CompiscriptVisitor):
         
         # Iterar sobre cada expression en el contexto
         for i in range(len(ctx.expression())):
-            argument = self.visit(ctx.expression(i))
+            argument_value, argument_type, argument_name = self.visit(ctx.expression(i))
             #print('Argumento: ', argument)
-            arguments.append(argument)
+            arguments.append(argument_value)
             #print(f"Argumento encontrado: {argument}")
             
         #print('Terminando la visita al nodo de argumentos')
