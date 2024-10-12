@@ -761,6 +761,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 if operator == '==':
                     
                     true_label = self.code_generator.new_label() # Label para cuando la expresión es verdadera
+                    false_label = self.code_generator.new_label() # Label para cuando la expresión es falsa
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
                     
                     # Si es igual, el resultado es verdadero
@@ -768,14 +769,19 @@ class SemanticVisitor(CompiscriptVisitor):
                     
                     # Si no es igual, el resultado es falso
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    self.code_generator.add_jump_instruction(false_label)
                     
                     # Agregar label verdadero
                     self.code_generator.add_label(true_label)
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
                     
+                    # Agregar label falso
+                    self.code_generator.add_label(false_label)
+                    
                     
                 elif operator == '!=':
                     false_label = self.code_generator.new_label() # Label para cuando la expresión es falsa
+                    true_label = self.code_generator.new_label() # Label para cuando la expresión es verdadera
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
                     
                     # Si es igual, el resultado es falso
@@ -783,10 +789,14 @@ class SemanticVisitor(CompiscriptVisitor):
                     
                     # Si no es igual, el resultado es verdadero
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    self.code_generator.add_jump_instruction(true_label)
                     
                     # Agregar label falso
                     self.code_generator.add_label(false_label)
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(true_label)
                 
                 left_value = result_temp_name
             
@@ -824,92 +834,80 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 
                 if operator == '<':
-                    less_than_temp_name = self.symbol_table.add_temp()
                     
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
-                    
-                    # Verificar si es menor que
-                    self.code_generator.add_instruction(op='SLT', dest=less_than_temp_name, arg1=left_value, arg2=right_value)
-                    
-                    # Si no es menor que, el resultado es falso
-                    self.code_generator.add_jump_instruction(false_label, arg1=less_than_temp_name, arg2=0)
                     
                     # Si es menor que, el resultado es verdadero
-                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
-                    self.code_generator.add_jump_instruction(true_label)
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='<')
                     
-                    # Agregar label falso
-                    self.code_generator.add_label(false_label)
+                    # Si no es menor que, el resultado es falso
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    self.code_generator.add_jump_instruction(false_label)
                     
                     # Agregar label verdadero
                     self.code_generator.add_label(true_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(false_label)
                     
                 elif operator == '<=':
-                    less_than_temp_name = self.symbol_table.add_temp()
                     
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
-                    # Verificar si a > b (o b < a)
-                    self.code_generator.add_instruction(op='SLT', dest=less_than_temp_name, arg1=right_value, arg2=left_value)
+                    # Si es menor que, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='<')
                     
-                    # Si se cumple, el resultado es falso
-                    self.code_generator.add_jump_instruction(false_label, arg1=less_than_temp_name, arg2=0)
+                    # Si es igual, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value)
                     
-                    # Si es no se cumple, el resultado es verdadero
-                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
-                    self.code_generator.add_jump_instruction(true_label)
-                    
-                    # Agregar label falso
-                    self.code_generator.add_label(false_label)
+                    # Si no es menor que, el resultado es falso
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    self.code_generator.add_jump_instruction(false_label)
                     
                     # Agregar label verdadero
                     self.code_generator.add_label(true_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(false_label)
                     
                 elif operator == '>':
-                    greater_than_temp_name = self.symbol_table.add_temp()
-                    
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
-                    # Verificar si a > b (o b < a)
-                    self.code_generator.add_instruction(op='SLT', dest=greater_than_temp_name, arg1=right_value, arg2=left_value)
+                    # Si es mayor que, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='>')
                     
-                    # Si no se cumple, el resultado es falso
-                    self.code_generator.add_jump_instruction(false_label, arg1=greater_than_temp_name, arg2=0)
-                    
-                    # Si se cumple, el resultado es verdadero
-                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
-                    self.code_generator.add_jump_instruction(true_label)
-                    
-                    # Agregar label falso
-                    self.code_generator.add_label(false_label)
+                    # Si no es mayor que, el resultado es falso
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    self.code_generator.add_jump_instruction(false_label)
                     
                     # Agregar label verdadero
                     self.code_generator.add_label(true_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(false_label)
                     
                 elif operator == '>=':
-                    greater_than_temp_name = self.symbol_table.add_temp()
-                    
                     result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
                     
-                    # Verificar si a < b
-                    self.code_generator.add_instruction(op='SLT', dest=greater_than_temp_name, arg1=left_value, arg2=right_value)
+                    # Si es mayor que, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='>')
                     
-                    # Si se cumple, el resultado es falso
-                    self.code_generator.add_jump_instruction(false_label, arg1=greater_than_temp_name, arg2=1)
+                    # Si es igual, el resultado es verdadero
+                    self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value)
                     
-                    # Si no se cumple, el resultado es verdadero
-                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
-                    self.code_generator.add_jump_instruction(true_label)
-                    
-                    # Agregar label falso
-                    self.code_generator.add_label(false_label)
+                    # Si no es menor que, el resultado es falso
                     self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=0)
+                    self.code_generator.add_jump_instruction(false_label)
                     
                     # Agregar label verdadero
                     self.code_generator.add_label(true_label)
+                    self.code_generator.add_instruction(op='=', dest=result_temp_name, arg1=1)
+                    
+                    # Agregar label verdadero
+                    self.code_generator.add_label(false_label)
                 
                 left_value = result_temp_name
             

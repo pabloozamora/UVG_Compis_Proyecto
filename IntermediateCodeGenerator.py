@@ -17,13 +17,16 @@ class Label:
         return f"{self.name}:"
     
 class JumpInstruction:
-    def __init__(self, label, arg1=None, arg2=None):
+    def __init__(self, label, arg1=None, arg2=None, op=None):
         self.label = label
         self.arg1 = arg1
         self.arg2 = arg2
+        self.op = op
         
     def __str__(self):
-        if self.arg1:
+        if self.arg1 and self.op:
+            return f"if {self.arg1} {self.op} {self.arg2} goto {self.label}"
+        elif self.arg1:
             return f"if {self.arg1} == {self.arg2} goto {self.label}"
         return f"goto {self.label}"
     
@@ -39,8 +42,8 @@ class IntermediateCodeGenerator:
         instruction = ThreeAddressInstruction(op, dest, arg1, arg2, result)
         self.instructions.append(instruction)
         
-    def add_jump_instruction(self, label, arg1=None, arg2=None):
-        instruction = JumpInstruction(label, arg1, arg2)
+    def add_jump_instruction(self, label, arg1=None, arg2=None, op=None):
+        instruction = JumpInstruction(label, arg1, arg2, op)
         self.instructions.append(instruction)
     
     def new_label(self):
