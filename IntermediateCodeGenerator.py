@@ -55,6 +55,13 @@ class CallInstruction:
         if self.arguments:
             return f"call {self.label}, {', '.join(str(argument) for argument in self.arguments)}, {len(self.arguments)}"
         return f"call {self.label}"
+    
+class PrintInstruction:
+    def __init__(self, arg):
+        self.arg = arg
+        
+    def __str__(self):
+        return f"PRINT {self.arg}"
         
     
 class IntermediateCodeGenerator:
@@ -81,6 +88,10 @@ class IntermediateCodeGenerator:
         
     def add_call_instruction(self, label, arguments):
         instruction = CallInstruction(label, arguments)
+        self.instructions.append(instruction)
+        
+    def add_print_instruction(self, arg):
+        instruction = PrintInstruction(arg)
         self.instructions.append(instruction)
     
     def new_label(self, name=None):

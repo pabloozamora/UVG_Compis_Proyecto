@@ -21,7 +21,7 @@ from MyErrorListener import MyErrorListener
     
 def main():
     # Cargar archivo de entrada
-    input_stream = FileStream("input.txt")
+    input_stream = FileStream("input.txt", encoding="utf-8")
     
     # Crear lexer y parser
     lexer = CompiscriptLexer(input_stream)

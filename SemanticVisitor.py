@@ -33,6 +33,7 @@ def types_are_numeric(left_types, right_types):
     for left_type in normalized_left_types:
         for right_type in normalized_right_types:
             if (isinstance(left_type, NumberType) or isinstance(left_type, AnyType)) and (isinstance(right_type, NumberType) or isinstance(right_type, AnyType)):
+                print('ES NUMÉRICO')
                 return True
     return False
 
@@ -61,6 +62,7 @@ def types_are_boolean(left_types, right_types):
             if (isinstance(left_type, BooleanType) or isinstance(left_type, AnyType)) and (isinstance(right_type, BooleanType) or isinstance(right_type, AnyType)):
                 return True
     return False
+
 
 class SemanticVisitor(CompiscriptVisitor):
     def __init__(self):
@@ -116,6 +118,12 @@ class SemanticVisitor(CompiscriptVisitor):
         
         # Crear el tipo de la clase
         class_type = ClassType(class_name, superclass.type if superclass else None)
+        
+        # Agregar propiedades de la superclase a la clase (Si las hay)
+        
+        if superclass:
+            for field_name, field_values in superclass.type.fields.items():
+                class_type.add_field(field_name, field_values['type'])
         
         # Agregar la clase a la tabla de símbolos (Esto solo para que se pueda hacer referencia a la clase dentro de la misma)
         # Posteriormente, se actualizará con los métodos y atributos de la clase
@@ -410,7 +418,10 @@ class SemanticVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#printStmt.
     def visitPrintStmt(self, ctx:CompiscriptParser.PrintStmtContext):
-        return self.visitChildren(ctx)
+        value, type, name = self.visit(ctx.expression())
+        
+        # Código intermedio
+        self.code_generator.add_print_instruction(value)
 
 
     # Visit a parse tree produced by CompiscriptParser#returnStmt.
@@ -603,7 +614,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     print(f"Se asigna a la propiedad {var_name} de tipo {var_type} el valor {var_value}")
                     
                     # Revisar que sea una propiedad de instancia
-                    if not self.previousIdentifierTypeInstance:
+                    if not self.previousIdentifierTypeInstance and call_name != 'this':
                         #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la propiedad {var_name} no es una propiedad de instancia")
                         self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la propiedad {var_name} no es una propiedad de instancia")
                         self.hasErrors = True
@@ -613,10 +624,10 @@ class SemanticVisitor(CompiscriptVisitor):
                 if call_name == 'this': # Se está haciendo referencia a un método o field de la clase actual
                     
                     # Verificar que se encuentre en el método init
-                    if not self.symbol_table.lookup('init'):
+                    """ if not self.symbol_table.lookup('init'):
                         self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: No pueden declararse propiedades fuera del método 'init'.")
                         self.hasErrors = True
-                        return None, None, None
+                        return None, None, None """
                     
                     current_class = self.symbol_table.lookup('this')
                     current_class.type.add_field(var_name, var_type)
@@ -976,16 +987,16 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 numeric_types = types_are_numeric(left_type, right_type)
                 string_types = types_are_string(left_type, right_type) # Tomar en consideración concatencación?
-                    
-                if not numeric_types:
-                    print('left type: ', left_type)
-                    print('right type: ', right_type)
-                    #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
-                    self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser numéricos")
-                    self.hasErrors = True
-                    return None, NilType(), None
                 
                 left_type = NumberType()
+                    
+                if not numeric_types:
+                    #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser ambos numéricos o ambos cadenas")
+                    #self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: los operandos de una suma deben ser numéricos")
+                    #self.hasErrors = True
+                    #return None, NilType(), None
+                    
+                    op = 'CONCAT'
                 
             elif operator == '-':
                 
@@ -1023,9 +1034,12 @@ class SemanticVisitor(CompiscriptVisitor):
             
             operator = ctx.getChild(2 * i - 1).getText()
             
+            print('LEFT TYPE: ', left_type)
+            print('RIGHT TYPE: ', right_type)
+            
             # Validar si los tipos son numéricos
             if not types_are_numeric(left_type, right_type):
-                #print(f"Error semántico {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
+                print(f"Error semántico {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
                 self.result.append(f"Error semántico {ctx.start.line}, posición {ctx.start.column}: los operandos de un operador aritmético deben ser numéricos")
                 self.hasErrors = True
                 return None, NilType(), None
@@ -1106,6 +1120,7 @@ class SemanticVisitor(CompiscriptVisitor):
             # Si la clase tiene un método init, llamarlo
             if class_symbol.type.methods['init']:
                 
+                self.code_generator.add_param_instruction(instance_temp)
                 for argument in arguments:
                     self.code_generator.add_param_instruction(argument)
                 
@@ -1185,8 +1200,8 @@ class SemanticVisitor(CompiscriptVisitor):
                 self.previousIdentifierTypeInstance = True
                 
                 # --- Código intermedio ---
-                if not self.hasErrors:
-                    current_identifier_offset = self.symbol_table.lookup('self') # Offset de la propiedad actual, tiene que iniciar con el offset de la instancia
+                
+                current_identifier_offset = self.symbol_table.lookup('self') # Offset de la propiedad actual, tiene que iniciar con el offset de la instancia
                     
                 current_identifier_type = type
                 
@@ -1214,6 +1229,164 @@ class SemanticVisitor(CompiscriptVisitor):
                         
                         if not self.hasErrors:
                             # Verificar si la propiedad ya está en la clase
+                            if not current_identifier_type.get_field(field_name):
+                                print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
+                                #self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}:  la propiedad '{field_name}' no ha sido declarada en la clase {current_identifier_type.name}")
+                                #self.hasErrors = True
+                                #return None, None, None
+                                current_identifier_type.add_field(field_name, AnyType())
+                        
+                            # Obtener el offset de la propiedad
+                            field = current_identifier_type.get_field(field_name)
+                            print('CURRENT IDENTIFIER TYPE: ', current_identifier_type)
+                            offset = field['offset']
+                            
+                            # Guardar en un temporal el valor de la propiedad
+                            offset_temp = self.symbol_table.add_temp()
+                            self.code_generator.add_instruction(op='=', dest=offset_temp, arg1=current_identifier_offset, argOffset=offset)
+                            current_identifier_offset = offset_temp
+                            
+                        # ------------------------------
+                        
+                        current_identifier_type = current_identifier_type.get_field(field_name)['type']
+                        self.previousIdentifierTypeInstance = isinstance(current_identifier_type, InstanceType)
+                        if self.previousIdentifierTypeInstance:
+                            current_identifier_type = current_identifier_type.class_type
+                            
+                return current_identifier_offset, current_identifier_type, name
+            
+            return value, type, name
+            
+        if '.' in ctx.getText() and name != 'this' and not (isinstance(type, NumberType) or isinstance(type, StringType)): # Se está llamando a un método o field de una clase
+            
+            # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
+            # únicamente se asume que el valor de retorno es de tipo 'Any' y advertir si se trata de una instancia
+            
+            if not isinstance(type, InstanceType) and not name.startswith('super'):
+                #print(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
+                self.result.append(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
+                self.hasErrors = True
+                
+                return None, AnyType(), name
+            
+            self.previousIdentifierTypeInstance = True
+                
+            # --- Código intermedio ---
+            if not self.hasErrors:
+                current_identifier_offset = self.symbol_table.lookup(name) # Offset de la propiedad actual, tiene que iniciar con el offset de la instancia
+            
+            else:
+                return None, AnyType, None
+                
+            current_identifier_type = type
+            if isinstance(type, InstanceType):
+                current_identifier_type = type.class_type
+            
+            i = 2
+            print('CHILDREN COUNT: ', ctx.getChildCount())
+            print('CHILDREN: ', ctx.getText())
+            while i < ctx.getChildCount():
+                
+                    print('CHILD: ', ctx.getChild(i).getText())
+                    
+                    if ctx.getChild(i).getText() == '.' or ctx.getChild(i).getText() == '(' or ctx.getChild(i).getText() == ')': # Ignorar los puntos
+                        i += 1
+                
+                    #print('CALL IDENTIFIER: ', ctx.IDENTIFIER(i).getText())
+                    
+                    elif ctx.getChild(i+1) and ctx.getChild(i + 1).getText() == '(':
+                        print('se trata de un método')
+                        
+                        # Se trata de un método
+                    
+                        field_name = ctx.getChild(i).getText()
+                        
+                        method_symbol = current_identifier_type.get_method(field_name)
+                        
+                        class_name = current_identifier_type.name
+                        
+                        if not method_symbol:
+                        
+                            if current_identifier_type.superclass:
+                                
+                                if current_identifier_type.superclass.get_method(field_name):
+                                    method_symbol = current_identifier_type.superclass.get_method(field_name)
+                                    class_name = current_identifier_type.superclass.name
+                                    
+                                else:    
+                                    #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método '{field_name}' no ha sido declarado en la clase {current_identifier_type.name}")
+                                    self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método '{field_name}' no ha sido declarado en la clase {current_identifier_type.name}")
+                                    self.hasErrors = True
+                                    return None, None, None
+                        
+                        return_type = method_symbol.return_type
+                        
+                        # Validar los argumentos pasados al método
+                        arguments = []
+                        if ctx.getChild(i + 2) and ctx.getChild(i + 2).getText() != ')': # Hay argumentos
+                            print('HAY ARGUMENTOS')
+                            arguments = self.visit(ctx.getChild(i + 2))
+                        
+                        if len(arguments) != len(method_symbol.arg_types):
+                            #print(f"Error semántico: El método '{field_name}' espera {len(method_symbol.type.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
+                            self.result.append(f"Error semántico: El método '{field_name}' espera {len(method_symbol.arg_types)} argumentos, pero se pasaron {len(arguments)}.")
+                            self.hasErrors = True
+                            return None, None, None
+                        
+                        # -- Código intermedio --
+                        
+                        if not self.hasErrors:
+                            
+                            # Agregar el offset de la instancia actual como primer argumento
+                            self.code_generator.add_param_instruction(current_identifier_offset)
+                            
+                            for argument in arguments:
+                                self.code_generator.add_param_instruction(argument)
+                            
+                            self.code_generator.add_call_instruction(label=f'L_{class_name}_{field_name}', arguments=arguments)
+                            print(f'SE ESTÁ LLAMANDO AL MÉTODO L_{class_name}_{field_name}')
+                        
+                            offset_temp = self.symbol_table.add_temp()
+                            self.code_generator.add_instruction(op='=', dest=offset_temp, arg1='R')
+                            current_identifier_offset = offset_temp
+                            
+                        # -----------------------------
+                        
+                        print('RETURN TYPE: ', return_type)
+                        
+                        for type in normalize_type(return_type):
+                            
+                            if isinstance(type, InstanceType):
+                                
+                                self.previousIdentifierTypeInstance = True
+                                current_identifier_type = type.class_type
+                                break
+                            
+                            else:
+                                self.previousIdentifierTypeInstance = False
+                            
+                        i += 1
+                    
+                    elif (not ctx.getChild(i+1)) or ctx.getChild(i + 1).getText() == '.':
+                        print('se trata de un field')
+                        
+                        # Se trata de un field
+                        
+                        if not self.previousIdentifierTypeInstance:
+                            #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                            self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
+                            self.hasErrors = True
+                            return None, None, None
+                            
+                        field_name = ctx.getChild(i).getText()
+                        
+                        #print('FIELD NAME: ', field_name)
+                        #print(type.class_type.superclass.get_method(field_name))
+                        
+                        # --- Código intermedio ---
+                        
+                        if not self.hasErrors:
+                            # Verificar si la propiedad ya está en la clase
                             if not current_identifier_type.get_field(field_name) and (not current_identifier_type.superclass or not current_identifier_type.superclass.get_field(field_name)):
                                 #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
                                 #self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}:  la propiedad '{field_name}' no ha sido declarada en la clase {current_identifier_type.name}")
@@ -1236,46 +1409,14 @@ class SemanticVisitor(CompiscriptVisitor):
                         self.previousIdentifierTypeInstance = isinstance(current_identifier_type, InstanceType)
                         if self.previousIdentifierTypeInstance:
                             current_identifier_type = current_identifier_type.class_type
+                            
+                        i += 1
+                        
+                    else:
+                        
+                        i += 1
             
-            return value, type, name
-            
-        if '.' in ctx.getText() and name != 'this' and not (isinstance(type, NumberType) or isinstance(type, StringType)) and not ctx.getText().startswith('super'): # Se está llamando a un método o field de una clase
-            # Dado que los fields y métodos de una clase pueden cambiar en tiempo de ejecución,
-            # únicamente se asume que el valor de retorno es de tipo 'Any' y advertir si se trata de una instancia
-            
-            if not isinstance(type, InstanceType) and name != "this":
-                #print(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
-                self.result.append(f'Error semántico línea {ctx.start.line}, posición {ctx.start.column}: "{name}" no se trata de una instancia')
-                self.hasErrors = True
-                
-                return None, AnyType(), name
-            
-            """ if isinstance(type, InstanceType):
-                previousIdentifierTypeInstance = True
-                for i in range(0, len(ctx.IDENTIFIER())): # Recorrer los métodos y fields de la clase
-                    
-                    if not previousIdentifierTypeInstance:
-                        #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
-                        self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el identificador {ctx.IDENTIFIER(i - 1)} no es una instancia")
-                        return None, None, None
-                
-                    #print('CALL IDENTIFIER: ', ctx.IDENTIFIER(i).getText())
-                    
-                    field_name = ctx.IDENTIFIER(i).getText()
-                    
-                    #print('FIELD NAME: ', field_name)
-                    #print(type.class_type.superclass.get_method(field_name))
-                    if not type.class_type.get_field(field_name) and not type.class_type.get_method(field_name) and not type.class_type.superclass.get_field(field_name) and not type.class_type.superclass.get_method(field_name):
-                        #print(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
-                        self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: la clase {type.name} no tiene un field '{field_name}'")
-                        return None, None, None
-                    
-                    previousIdentifierTypeInstance = type.class_type.get_field(field_name) or type.class_type.get_method(field_name) or type.class_type.superclass.get_field(field_name) or type.class_type.superclass.get_method(field_name)
-                    previousIdentifierTypeInstance = isinstance(previousIdentifierTypeInstance, InstanceType)
-                    
-                    #print('PREVIOUS IDENTIFIER TYPE: ', previousIdentifierTypeInstance)
-            
-            return None, AnyType(), name """
+            return current_identifier_offset, current_identifier_type, name
         
         # Si no se trata de una función, devolver primary
         if not (isinstance(type, FunctionType) or isinstance(type, AnonymousFunctionType)):
@@ -1430,9 +1571,11 @@ class SemanticVisitor(CompiscriptVisitor):
                 self.result.append(f"Error semántico línea {ctx.start.line}, posición {ctx.start.column}: el método {method_name} no existe en la superclase {superclass.name}.")
                 self.hasErrors = True
                 return None, None, None
+            
+            # -- Código intermedio --
 
             #print(f"Llamada al método {method_name} en superclase {superclass.name}.")
-            return None, method.return_type, f'super.{method_name}'
+            return method, method.return_type, f'super.{method_name}'
                 
         elif ctx.IDENTIFIER(): # Si es un identificador
             #print('Lo reconoce como identificador')
