@@ -1,6 +1,7 @@
 import uuid
 
 POINTER_SIZE = 4
+CLASS_SIZE = 255
 class SymbolTable:
     def __init__(self, parent=None, function_scope=False):
         self.symbols = {}
@@ -112,6 +113,7 @@ class ClassType:
         self.current_offset = 0
         self.methods = {}
         self.fields = {}
+        self.size = CLASS_SIZE
         
     def add_method(self, name, method_type):
         self.methods[name] = method_type

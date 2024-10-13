@@ -1,12 +1,18 @@
-fun fibonacci(n) {
-  if (n <= 1) {
-    return n;
-  } else {
-    var a = fibonacci(n - 1);
-    var b = fibonacci(n - 2);
-    return a + b;
+class Nombre {
+    init(nombre) {
+        this.primer_nombre = nombre;
+        this.segundo_nombre = "hola";
+    }
+}
+
+class Persona {
+  init(nombre, edad) {
+    this.color = "rojo";
+  }
+
+  calcularEdad() {
+    var x = 5;
   }
 }
 
-var numero = 10;
-var resultado = fibonacci(numero);
+var pablo = new Persona("Pablo", 22);
