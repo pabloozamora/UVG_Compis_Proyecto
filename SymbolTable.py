@@ -15,8 +15,17 @@ class SymbolTable:
         if not (isinstance(symbol.type, FunctionType) or isinstance(symbol.type, AnonymousFunctionType)):
             self.scope_offset += POINTER_SIZE
         
-    def lookup(self, name):
+    def lookup(self, name, params=None):
         if name in self.symbols:
+            if params:
+                symbol = self.symbols[name]
+                if isinstance(symbol.type, FunctionType) or isinstance(symbol.type, AnonymousFunctionType):
+                    if len(params) == len(symbol.type.arg_types):
+                        return symbol
+                    else:
+                        return None
+                else:
+                    return None
             return self.symbols[name]
         elif self.parent:
             return self.parent.lookup(name)
@@ -40,7 +49,9 @@ class Symbol:
         self.value = value
         
     def __repr__(self):
-        return f"Symbol(name={self.name}, type={self.type}, {self.scope}[{self.offset}])"
+        if isinstance(self.type, dict) or isinstance(self.type, set):
+            return f"Symbol(name={self.name}, type={[typeObj for typeObj in self.type]}, {self.scope}[{self.offset}])"
+        return f"Symbol(name={self.name}, type={self.type.name}, {self.scope}[{self.offset}])"
     
 class TempSymbol(Symbol):
     def __init__(self, name, offset=None, scope="GP", value=None):
@@ -119,6 +130,10 @@ class ClassType:
         self.methods[name] = method_type
 
     def add_field(self, name, field_type):
+        if name in self.fields:
+            existing_field = self.fields.get(name)
+            self.fields[name] = {'type': field_type, 'offset': existing_field['offset']}
+            return
         self.fields[name] = {'type': field_type, 'offset': self.current_offset}
         self.current_offset += POINTER_SIZE
 
@@ -137,7 +152,12 @@ class InstanceType:
         self.class_type = class_type
         self.fields = {}
         self.init_arguments = init_arguments or []
+        self.current_offset = 0
         self.size = 4
+        
+    def add_field(self, name, field_type):
+        self.fields[name] = {'type': field_type, 'offset': self.current_offset}
+        self.current_offset += POINTER_SIZE
         
     def get_field(self, name):
         return self.fields.get(name)

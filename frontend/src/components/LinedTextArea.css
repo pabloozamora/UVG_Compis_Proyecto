@@ -3,7 +3,7 @@
 .lined-text-area {
     display: flex;
     position: relative;
-    width: 100%;
+    width: 1000px;
     max-height: 300px; /* Altura máxima para el contenedor */
     overflow: hidden; /* Oculta cualquier desbordamiento que no esté cubierto por los hijos */
     justify-content: center;
@@ -22,7 +22,7 @@
   }
   
   .text-area {
-    width: 765px;
+    width: 100%;
     padding: 10px;
     border: none;
     outline: none;

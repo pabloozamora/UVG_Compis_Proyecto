@@ -6,22 +6,17 @@ from CompiscriptParser import CompiscriptParser
 from anytree import Node, RenderTree, AsciiStyle
 from anytree.exporter import DotExporter
 from SemanticVisitor import SemanticVisitor
-from TACVisitor import TACVisitor
 from MyErrorListener import MyErrorListener
+from flask import Flask, request, jsonify
 
-""" def create_tree(node, parser, parent=None):
-    if node.getChildCount() == 0:  # Es una hoja
-        return Node(node.getText(), parent=parent)
-    
-    rule_name = parser.ruleNames[node.getRuleIndex()]
-    tree_node = Node(rule_name, parent=parent)
-    for child in node.getChildren():
-        create_tree(child, parser, tree_node)
-    return tree_node """
-    
+app = Flask(__name__)
+
+@app.route('/analyze', methods=['POST'])   
 def main():
+    print('\n--- INICIA EJECUCIÓN ---\n')
     # Cargar archivo de entrada
-    input_stream = FileStream("input.txt", encoding="utf-8")
+    code = request.get_json().get('code')
+    input_stream = InputStream(code)
     
     # Crear lexer y parser
     lexer = CompiscriptLexer(input_stream)
@@ -43,22 +38,36 @@ def main():
     
     # Renderizar el árbol sintáctico
     # print("Árbol de análisis sintáctico:\n")
-    print(tree.toStringTree(recog=parser), "\n")
+    # print(tree.toStringTree(recog=parser), "\n")
     
     if error_listener.errors:
         print("El programa contiene errores sintácticos.")
-        return
+        
+        response = []
+        response.append("El programa contiene errores sintácticos.")
+        response.append(error_listener.errors)
+        return jsonify(result=response)
         
     semanticVisitor = SemanticVisitor()
     semanticVisitor.visit(tree)
     
     if semanticVisitor.hasErrors:
+        response = []
+        response.append("El programa contiene errores semánticos.")
+        
         print("El programa contiene errores semánticos.")
         for error in semanticVisitor.result:
             print(error)
-        return
+            response.append(error)
+            
+        return jsonify(result=response)
     
     print(semanticVisitor.code_generator)
     
+    response = [str(instruction) for instruction in semanticVisitor.code_generator.instructions]
+    return jsonify(result=response)
+    
+    return 
+    
 if __name__ == '__main__':
-    main()
+    app.run(debug=True)

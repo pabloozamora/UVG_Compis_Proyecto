@@ -26,7 +26,7 @@ function App() {
         if (data.result) {
           console.log(data.result); // Verifica los datos recibidos
           setOutput(data.result
-            .map((line, index) => <p key={index}>{line}</p>))
+            .map((line, index) => <p className="outputP" key={index}>{line}</p>))
         } else {
           setOutput(<p>{data.error}</p>)
         }

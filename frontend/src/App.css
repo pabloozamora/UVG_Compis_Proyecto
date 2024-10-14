@@ -43,8 +43,11 @@
 
 .output {
   overflow-y: scroll;
-  max-height: 200px;
+  max-width: 1000px;
+  max-height: 180px;
   margin-top: 1em;
+  line-height: 10px;
+  text-align: left;
 }
 
 .compileButton {
@@ -54,4 +57,8 @@
 .title {
   margin-top: 10px;
   font-size: 2rem;
+}
+
+.outputP{
+  line-height: normal;
 }
