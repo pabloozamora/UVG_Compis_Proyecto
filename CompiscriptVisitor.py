@@ -39,6 +39,16 @@ class CompiscriptVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CompiscriptParser#breakStmt.
+    def visitBreakStmt(self, ctx:CompiscriptParser.BreakStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#continueStmt.
+    def visitContinueStmt(self, ctx:CompiscriptParser.ContinueStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CompiscriptParser#exprStmt.
     def visitExprStmt(self, ctx:CompiscriptParser.ExprStmtContext):
         return self.visitChildren(ctx)
@@ -69,16 +79,6 @@ class CompiscriptVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiscriptParser#breakStmt.
-    def visitBreakStmt(self, ctx:CompiscriptParser.BreakStmtContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiscriptParser#continueStmt.
-    def visitContinueStmt(self, ctx:CompiscriptParser.ContinueStmtContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
         return self.visitChildren(ctx)
@@ -86,6 +86,31 @@ class CompiscriptVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#funAnon.
     def visitFunAnon(self, ctx:CompiscriptParser.FunAnonContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#inputStmt.
+    def visitInputStmt(self, ctx:CompiscriptParser.InputStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#input.
+    def visitInput(self, ctx:CompiscriptParser.InputContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#inputInt.
+    def visitInputInt(self, ctx:CompiscriptParser.InputIntContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#inputFloat.
+    def visitInputFloat(self, ctx:CompiscriptParser.InputFloatContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiscriptParser#inputString.
+    def visitInputString(self, ctx:CompiscriptParser.InputStringContext):
         return self.visitChildren(ctx)
 
 

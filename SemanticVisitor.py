@@ -422,6 +422,52 @@ class SemanticVisitor(CompiscriptVisitor):
         
         # Código intermedio
         self.code_generator.add_print_instruction(value)
+        
+    def visitInputStmt(self, ctx: CompiscriptParser.InputStmtContext):
+        return super().visitInputStmt(ctx)
+        
+    def visitInput(self, ctx: CompiscriptParser.InputContext):
+        return self.visitChildren(ctx)
+    
+    def visitInputInt(self, ctx: CompiscriptParser.InputIntContext):
+        
+        # Obtener el mensaje a mostrar
+        message = ctx.STRING().getText()
+        
+        # Código intermedio
+        self.code_generator.add_print_instruction(message)
+        
+        temp = self.symbol_table.add_temp(NumberType())
+        self.code_generator.add_input_int_instruction(dest=temp)
+        
+        return temp, NumberType(), None
+        
+    def visitInputFloat(self, ctx: CompiscriptParser.InputFloatContext):
+        
+        # Obtener el mensaje a mostrar
+        message = ctx.STRING().getText()
+        
+        # Código intermedio
+        self.code_generator.add_print_instruction(message)
+        
+        temp = self.symbol_table.add_temp(NumberType())
+        self.code_generator.add_input_float_instruction(dest=temp)
+        
+        return temp, NumberType(), None
+        
+    def visitInputString(self, ctx: CompiscriptParser.InputStringContext):
+            
+        # Obtener el mensaje a mostrar
+        message = ctx.STRING().getText()
+        char_number = ctx.NUMBER().getText()
+        
+        # Código intermedio
+        self.code_generator.add_print_instruction(message)
+        
+        temp = self.symbol_table.add_temp(StringType())
+        self.code_generator.add_input_string_instruction(dest=temp, charNum=char_number)
+        
+        return temp, StringType(), None
 
 
     # Visit a parse tree produced by CompiscriptParser#returnStmt.
@@ -687,6 +733,10 @@ class SemanticVisitor(CompiscriptVisitor):
             
             var_value, var_type, var_name = self.visit(ctx.logic_or())
             
+        elif ctx.input(): # Se sigue con input
+            
+            var_value, var_type, var_name = self.visit(ctx.input())
+            
         return var_value, var_type, var_name
 
 
@@ -726,7 +776,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
         # Código intermedio
         if not self.hasErrors and len(ctx.logic_and()) > 1:
-            result_temp_name = self.symbol_table.add_temp()
+            result_temp_name = self.symbol_table.add_temp(type=BooleanType())
             
             # Si se llega a este punto, todas las condiciones son falsas
             false_label = self.code_generator.new_label()
@@ -781,7 +831,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
         # Código intermedio
         if not self.hasErrors and len(ctx.equality()) > 1:
-            result_temp_name = self.symbol_table.add_temp()
+            result_temp_name = self.symbol_table.add_temp(type=BooleanType())
             
             # Si se llega a este punto, todas las condiciones son verdaderas
             true_label = self.code_generator.new_label()
@@ -829,7 +879,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     
                     true_label = self.code_generator.new_label() # Label para cuando la expresión es verdadera
                     false_label = self.code_generator.new_label() # Label para cuando la expresión es falsa
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la igualdad
                     
                     # Si es igual, el resultado es verdadero
                     self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value)
@@ -849,7 +899,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 elif operator == '!=':
                     false_label = self.code_generator.new_label() # Label para cuando la expresión es falsa
                     true_label = self.code_generator.new_label() # Label para cuando la expresión es verdadera
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la igualdad
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la igualdad
                     
                     # Si es igual, el resultado es falso
                     self.code_generator.add_jump_instruction(false_label, arg1=left_value, arg2=right_value)
@@ -904,7 +954,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 if operator == '<':
                     
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la comparación
                     
                     # Si es menor que, el resultado es verdadero
                     self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='<')
@@ -922,7 +972,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     
                 elif operator == '<=':
                     
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la comparación
                     
                     # Si es menor que, el resultado es verdadero
                     self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='<')
@@ -942,7 +992,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(false_label)
                     
                 elif operator == '>':
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la comparación
                     
                     # Si es mayor que, el resultado es verdadero
                     self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='>')
@@ -959,7 +1009,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     self.code_generator.add_label(false_label)
                     
                 elif operator == '>=':
-                    result_temp_name = self.symbol_table.add_temp() # Temporal para guardar el resultado de la comparación
+                    result_temp_name = self.symbol_table.add_temp(type=BooleanType()) # Temporal para guardar el resultado de la comparación
                     
                     # Si es mayor que, el resultado es verdadero
                     self.code_generator.add_jump_instruction(true_label, arg1=left_value, arg2=right_value, op='>')
@@ -1027,7 +1077,7 @@ class SemanticVisitor(CompiscriptVisitor):
             # Código intermedio
                 
             if not self.hasErrors:
-                result_temp_name = self.symbol_table.add_temp()
+                result_temp_name = self.symbol_table.add_temp(type=left_type)
                 self.code_generator.add_instruction(op=op, dest=result_temp_name, arg1=left_value, arg2=right_value)
                 
                 left_value = result_temp_name
@@ -1068,7 +1118,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     op = 'MOD'
                 
                 # Temporal para el resultado
-                result_temp_name = self.symbol_table.add_temp()
+                result_temp_name = self.symbol_table.add_temp(type=NumberType())
                 self.code_generator.add_instruction(op=op, dest=result_temp_name, arg1=left_value, arg2=right_value)
                 
                 left_value = result_temp_name
@@ -1133,7 +1183,7 @@ class SemanticVisitor(CompiscriptVisitor):
         if not self.hasErrors:
             
             # Reservar un espacio en memoria para la instancia
-            instance_temp = self.symbol_table.add_temp()
+            instance_temp = self.symbol_table.add_temp(type=instance)
             self.code_generator.add_instruction(op='ALLOC', dest=instance_temp, arg1=class_symbol.type.size)
             
             # Si la clase tiene un método init, llamarlo
@@ -1171,8 +1221,8 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 if not self.hasErrors:
                     
-                    temp_name = self.code_generator.symbol_table.add_temp()
-                    self.code_generator.add_instruction(op='NOR', dest=temp_name, arg1=value)
+                    temp_name = self.symbol_table.add_temp(type=BooleanType())
+                    self.code_generator.add_instruction(op='NOT', dest=temp_name, arg1=value)
                     result_value = temp_name
                     value = result_value
             
@@ -1188,7 +1238,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 if not self.hasErrors:
                     
-                    temp_name = self.symbol_table.add_temp()
+                    temp_name = self.symbol_table.add_temp(type=NumberType())
                     self.code_generator.add_instruction(op='NEG', dest=temp_name, arg1=value)
                     result_value = temp_name
                     value = result_value
@@ -1345,7 +1395,7 @@ class SemanticVisitor(CompiscriptVisitor):
                             self.code_generator.add_call_instruction(label=f'L_{current_class_name}_{field_name}_{len(arguments)}', arguments=instruction_arguments)
                             #print(f'SE ESTÁ LLAMANDO AL MÉTODO L_{current_class_name}_{field_name}')
                         
-                            offset_temp = self.symbol_table.add_temp()
+                            offset_temp = self.symbol_table.add_temp(type=InstanceType())
                             self.code_generator.add_instruction(op='=', dest=offset_temp, arg1='R')
                             current_identifier_offset = offset_temp
                             
@@ -1399,13 +1449,15 @@ class SemanticVisitor(CompiscriptVisitor):
                             offset = field['offset']
                             
                             # Guardar en un temporal el valor de la propiedad
-                            offset_temp = self.symbol_table.add_temp()
+                            offset_temp = self.symbol_table.add_temp(type=field['type'])
                             self.code_generator.add_instruction(op='=', dest=offset_temp, arg1=current_identifier_offset, argOffset=offset)
                             current_identifier_offset = offset_temp
                             
                         # ------------------------------
                         
-                        current_identifier_type = current_identifier_type.get_field(field_name)['type']
+                        current_identifier_type = current_identifier_type.get_field(field_name)
+                        if current_identifier_type:
+                            current_identifier_type = current_identifier_type['type']
                         self.previousIdentifierTypeInstance = isinstance(current_identifier_type, InstanceType)
                         if self.previousIdentifierTypeInstance:
                             current_identifier_type = current_identifier_type
@@ -1462,7 +1514,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 self.code_generator.add_param_instruction(argument)
             
             self.code_generator.add_call_instruction(label=f'L_{name}_{len(arguments)}', arguments=arguments)
-            return_temp = self.symbol_table.add_temp()
+            return_temp = self.symbol_table.add_temp(type=return_type)
             self.code_generator.add_instruction(op='=', dest=return_temp, arg1='R')
             value = return_temp
 
@@ -1480,7 +1532,7 @@ class SemanticVisitor(CompiscriptVisitor):
         if ctx.NUMBER():
             var_name = "number"
             value = float(ctx.NUMBER().getText())
-            value_temp = self.symbol_table.add_temp()
+            value_temp = self.symbol_table.add_temp(type=NumberType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
             type = NumberType()
@@ -1488,7 +1540,7 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.STRING():
             var_name = "string"
             value = ctx.STRING().getText()
-            value_temp = self.symbol_table.add_temp()
+            value_temp = self.symbol_table.add_temp(type=StringType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
             type = StringType()
@@ -1499,7 +1551,7 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.getText() == 'nil':
             var_name = 'nil'
             value = 'nil'
-            value_temp = self.symbol_table.add_temp()
+            value_temp = self.symbol_table.add_temp(type=NilType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
             type = NilType()
@@ -1507,7 +1559,7 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.getText() == 'true':
             var_name = 'true'
             value = 1
-            value_temp = self.symbol_table.add_temp()
+            value_temp = self.symbol_table.add_temp(type=BooleanType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
             type = BooleanType()
@@ -1515,7 +1567,7 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.getText() == 'false':
             var_name = 'false'
             value = 0
-            value_temp = self.symbol_table.add_temp()
+            value_temp = self.symbol_table.add_temp(type=BooleanType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
             type = BooleanType()

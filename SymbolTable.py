@@ -47,6 +47,7 @@ class Symbol:
         self.offset = offset
         self.scope = scope
         self.value = value
+        self.id = f'{uuid.uuid4()}'
         
     def __repr__(self):
         if isinstance(self.type, dict) or isinstance(self.type, set):
@@ -54,9 +55,9 @@ class Symbol:
         return f"Symbol(name={self.name}, type={self.type.name}, {self.scope}[{self.offset}])"
     
 class TempSymbol(Symbol):
-    def __init__(self, name, offset=None, scope="GP", value=None):
+    def __init__(self, name, type="temp", offset=None, scope="GP", value=None):
         # Llamar al constructor de la clase base (Symbol)
-        super().__init__(name, type="temp", offset=offset, scope=scope, value=value)
+        super().__init__(name, type=type, offset=offset, scope=scope, value=value)
         
     def __repr__(self):
         return f'{self.name.split("-")[:1][0]} ({self.scope}[{self.offset}])'
@@ -68,9 +69,10 @@ class AnyType:
     def __repr__(self):
         return "AnyType()"        
 class NumberType:
-    def __init__(self):
+    def __init__(self, is_float=True):
         self.name = "number"
         self.size = 4
+        self.is_float = is_float
         
     def __repr__(self):
         return "NumberType()"
@@ -201,13 +203,13 @@ class ListSymbolTable:
     def lookup(self, name):
         return self.current_scope().lookup(name)
     
-    def add_temp(self, value=None):
+    def add_temp(self, type="temp", value=None):
         name = f"t{self.temp_count}-{uuid.uuid4()}"
         symbol_offset = self.current_scope().scope_offset
         symbol_scope = 'GP'
         if self.in_function_scope():
             symbol_scope = 'SP'
-        symbol = TempSymbol(name, offset=symbol_offset, scope=symbol_scope, value=value)
+        symbol = TempSymbol(name, type=type, offset=symbol_offset, scope=symbol_scope, value=value)
         self.current_scope().add(name, symbol)
         self.temp_count += 1
         return symbol

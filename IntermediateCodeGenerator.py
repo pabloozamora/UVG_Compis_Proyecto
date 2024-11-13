@@ -62,7 +62,28 @@ class PrintInstruction:
         
     def __str__(self):
         return f"PRINT {self.arg}"
+    
+class InputIntInstruction:
+    def __init__(self, dest):
+        self.dest = dest
         
+    def __str__(self):
+        return f"INPUTINT {self.dest}"
+    
+class InputFloatInstruction:
+    def __init__(self, dest):
+        self.dest = dest
+        
+    def __str__(self):
+        return f"INPUTFLOAT {self.dest}"
+    
+class InputStringInstruction:
+    def __init__(self, dest, charNum):
+        self.dest = dest
+        self.charNum = charNum
+        
+    def __str__(self):
+        return f"INPUTSTRING {self.dest}, {self.charNum}"
     
 class IntermediateCodeGenerator:
     def __init__(self):
@@ -92,6 +113,18 @@ class IntermediateCodeGenerator:
         
     def add_print_instruction(self, arg):
         instruction = PrintInstruction(arg)
+        self.instructions.append(instruction)
+        
+    def add_input_int_instruction(self, dest):
+        instruction = InputIntInstruction()
+        self.instructions.append(instruction)
+        
+    def add_input_float_instruction(self, dest):
+        instruction = InputFloatInstruction(dest)
+        self.instructions.append(instruction)
+        
+    def add_input_string_instruction(self, dest, charNum):
+        instruction = InputStringInstruction(dest, charNum)
         self.instructions.append(instruction)
     
     def new_label(self, name=None):
