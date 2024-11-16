@@ -1189,9 +1189,9 @@ class SemanticVisitor(CompiscriptVisitor):
             # Si la clase tiene un método init, llamarlo
             if class_symbol.type.get_method('init'):
                 
-                self.code_generator.add_param_instruction(instance_temp)
+                self.code_generator.add_arg_instruction(instance_temp)
                 for argument in arguments:
-                    self.code_generator.add_param_instruction(argument)
+                    self.code_generator.add_arg_instruction(argument)
                 
                 self.code_generator.add_call_instruction(label=f'L_{class_name}_init', arguments=arguments)
         
@@ -1385,11 +1385,11 @@ class SemanticVisitor(CompiscriptVisitor):
                             instruction_arguments = []
                             
                             # Agregar el offset de la instancia actual como primer argumento
-                            self.code_generator.add_param_instruction(current_identifier_offset)
+                            self.code_generator.add_arg_instruction(current_identifier_offset)
                             instruction_arguments.append(current_identifier_offset)
                             
                             for argument in arguments:
-                                self.code_generator.add_param_instruction(argument)
+                                self.code_generator.add_arg_instruction(argument)
                                 instruction_arguments.append(argument)
                             
                             self.code_generator.add_call_instruction(label=f'L_{current_class_name}_{field_name}_{len(arguments)}', arguments=instruction_arguments)
@@ -1511,7 +1511,7 @@ class SemanticVisitor(CompiscriptVisitor):
         if not self.hasErrors:
             
             for argument in arguments:
-                self.code_generator.add_param_instruction(argument)
+                self.code_generator.add_arg_instruction(argument)
             
             self.code_generator.add_call_instruction(label=f'L_{name}_{len(arguments)}', arguments=arguments)
             return_temp = self.symbol_table.add_temp(type=return_type)
@@ -1686,7 +1686,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 label_name = f"{current_class.type.name}_{function_name}_{paramcount}"
             
             function_label = self.code_generator.new_label(label_name)
-            self.code_generator.add_label(function_label)
+            self.code_generator.add_label(function_label, func=True)
             
         # ----------------------------------------
             

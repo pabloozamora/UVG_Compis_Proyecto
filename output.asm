@@ -1,89 +1,71 @@
 .text
 .globl main
 main:
-li $a1, 0x10000000 # Cargar la direccion asignada para la variable 't0-ddb726ce-f356-41b4-a7f0-b6e1728c9bba' en memoria estatica
+li $a1, 0x10000000 # Cargar la direccion asignada para la variable 't4-92840a91-9b22-4daf-b284-8a13df281b9d' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li.s $f1, 10.0
+li.s $f1, 44.0
 mfc1 $t0, $f1
-li $a1, 0x10000004 # Cargar la direccion asignada para la variable 'a' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
-li $a1, 0x10000008 # Cargar la direccion asignada para la variable 't1-008adc86-0c18-42aa-8508-eced63452ea9' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
-li.s $f1, 5.0
+addi $sp, $sp, -4 # Reservar espacio en el stack para los argumentos
+sw $t0, 0($sp)
+jal L_imprimir_1
+li $v0, 10
+syscall
+
+L_imprimir_1:
+lw $t0, 4($sp) # Obtener el valor de la variable "t0-5e9b913f-0c06-45df-8ebf-ceae167c2d21" del stack
+li.s $f1, 50.0
 mfc1 $t1, $f1
-mtc1 $t0, $f1 # Mover el ultimo valor valido de la variable 'a' en un registro float
-mtc1 $t1, $f2 # Mover el ultimo valor valido de la variable 't1-008adc86-0c18-42aa-8508-eced63452ea9' en un registro float
+sw $t1, 4($sp)
+lw $t2, 0($sp) # Obtener el valor de la variable "a" del stack
+lw $t0, 4($sp) # Obtener el valor de la variable "t0-5e9b913f-0c06-45df-8ebf-ceae167c2d21" del stack
+mtc1 $t2, $f1 # Mover el ultimo valor valido de la variable 'a' en un registro float
+mtc1 $t0, $f2 # Mover el ultimo valor valido de la variable 't0-5e9b913f-0c06-45df-8ebf-ceae167c2d21' en un registro float
 c.lt.s $f2, $f1
 bc1t L2
-li $a1, 0x1000000c # Cargar la direccion asignada para la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
+lw $t3, 8($sp) # Obtener el valor de la variable "t1-5d06cce2-9d9f-49e4-abff-be0b70e6b16f" del stack
 li.s $f1, 0.0
-mfc1 $t2, $f1
-lw $a3, 0x10000000 # Guardar variables antes de ambiguedad
-sw $t0, 0($a3)
-lw $a3, 0x10000004 # Guardar variables antes de ambiguedad
-sw $t0, 0($a3)
-lw $a3, 0x10000008 # Guardar variables antes de ambiguedad
-sw $t1, 0($a3)
-lw $a3, 0x1000000c # Guardar variables antes de ambiguedad
-sw $t2, 0($a3)
+mfc1 $t4, $f1
+sw $t4, 8($sp)
 j L1
 L2:
-li $a1, 0x1000000c # Cargar la direccion asignada para la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
+lw $t0, 8($sp) # Obtener el valor de la variable "t1-5d06cce2-9d9f-49e4-abff-be0b70e6b16f" del stack
 li.s $f1, 1.0
-mfc1 $t0, $f1
-lw $a3, 0x1000000c # Guardar variables antes de ambiguedad
-sw $t0, 0($a3)
+mfc1 $t1, $f1
+sw $t1, 8($sp)
 L1:
-li $a1, 0x1000000c # Cargar la direccion asignada para la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
-lw $t0, 0x1000000c # La direccion del heap de la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' se carga en $t0
-lw $t1, 0($t0) # El valor de la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' en el heap se carga en $t1
+lw $t0, 8($sp) # Obtener el valor de la variable "t1-5d06cce2-9d9f-49e4-abff-be0b70e6b16f" del stack
 li.s $f1, 0.0
-mfc1 $t2, $f1
-mtc1 $t2, $f2 # Mover el valor de la constante '0' en un registro float
-mtc1 $t1, $f1 # Mover el ultimo valor valido de la variable 't2-f06084a0-a4a5-496d-8b6c-d7afd2f2c0c4' en un registro float
+mfc1 $t1, $f1
+mtc1 $t1, $f2 # Mover el valor de la constante '0' en un registro float
+mtc1 $t0, $f1 # Mover el ultimo valor valido de la variable 't1-5d06cce2-9d9f-49e4-abff-be0b70e6b16f' en un registro float
 c.eq.s $f1, $f2
 bc1t L4
-li $a1, 0x10000010 # Cargar la direccion asignada para la variable 't3-aa6e218f-0402-47da-be68-a6a1ddae4403' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
-li.s $f1, 6.0
+lw $t2, 12($sp) # Obtener el valor de la variable "t2-e1f1ba71-20e0-4524-a116-5f3b9e9a4ca4" del stack
+li.s $f1, 100.0
 mfc1 $t3, $f1
-mtc1 $t3, $f1
+sw $t3, 12($sp)
+lw $t2, 12($sp) # Obtener el valor de la variable "t2-e1f1ba71-20e0-4524-a116-5f3b9e9a4ca4" del stack
+mtc1 $t2, $f1
 li $v0, 2
 mov.s $f12, $f1
 syscall
-lw $a3, 0x1000000c # Guardar variables antes de ambiguedad
-sw $t1, 0($a3)
-lw $a3, 0x10000010 # Guardar variables antes de ambiguedad
-sw $t3, 0($a3)
 j L3
 L4:
-li $a1, 0x10000014 # Cargar la direccion asignada para la variable 't4-b3c4b51f-2418-4dd2-b889-a056c09830c2' en memoria estatica
-li $a2, 4 # Cargar los bytes que necesita del heap
-jal check_existing_variable
-li.s $f1, 5.0
-mfc1 $t0, $f1
+lw $t0, 12($sp) # Obtener el valor de la variable "t3-225a7eff-7494-4ea2-a861-ed70e689f7cf" del stack
+li.s $f1, 0.0
+mfc1 $t1, $f1
+sw $t1, 12($sp)
+lw $t0, 12($sp) # Obtener el valor de la variable "t3-225a7eff-7494-4ea2-a861-ed70e689f7cf" del stack
 mtc1 $t0, $f1
 li $v0, 2
 mov.s $f12, $f1
 syscall
-lw $a3, 0x10000014 # Guardar variables antes de ambiguedad
-sw $t0, 0($a3)
 L3:
-li $v0, 10
-syscall
+jr $ra
 
 check_existing_variable:
-lw $s0, 0($a1) # Cargar la dirección de la variable en memoria estática
+lw $s0, 0($a1) # Cargar la direccion de la variable en memoria estatica
 bnez $s0, end_check_existing_variable # Si la direccion (argumento 1) no es 0, regresar
 save_variable:
 li $v0, 9

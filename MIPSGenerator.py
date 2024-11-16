@@ -1,5 +1,5 @@
-from IntermediateCodeGenerator import ThreeAddressInstruction, PrintInstruction, Label, JumpInstruction
-from SymbolTable import Symbol, TempSymbol, NumberType
+from IntermediateCodeGenerator import ThreeAddressInstruction, PrintInstruction, Label, JumpInstruction, ParamInstruction, ArgInstruction, CallInstruction, ReturnInstruction
+from SymbolTable import Symbol, TempSymbol, NumberType, AnyType
 
 DATA_BP = 0x10000000
 
@@ -17,6 +17,7 @@ class MIPSGenerator:
     def __init__(self, intermediate_code):
         self.intermediate_code = intermediate_code
         self.mips_code = []
+        self.subroutines = []
         self.register_descriptor = {
             't0': None,'t1': None, 't2': None, 't3': None, 't4': None, 't5': None, 't6': None, 't7': None,
         }
@@ -24,6 +25,14 @@ class MIPSGenerator:
         self.current_instruction_register = None
         self.ambiguous_region = False
         self.ambiguous_region_exit = None
+        self.in_subroutine = False
+        
+    def add_code(self, code):
+        if not self.in_subroutine:
+            self.mips_code.append(code)
+            
+        else:
+            self.subroutines[-1].append(code)
         
     def set_ambiguous_region_exit(self, label):
         # Se terminó la primera mitad de la región ambigua, resetear el descriptor de registros y el descriptor de direcciones
@@ -45,8 +54,8 @@ class MIPSGenerator:
     
             if not variable.address_valid: # Si la variable no tiene su último valor válido en memoria
                 # Cargar la dirección del heap de la variable en un registro
-                self.mips_code.append(f"lw $a3, {variable.address} # Guardar variables antes de ambiguedad")
-                self.mips_code.append(f"sw ${variable.registers[0]}, {variable.offset}($a3)")
+                self.add_code(f"lw $a3, {variable.address} # Guardar variables antes de ambiguedad")
+                self.add_code(f"sw ${variable.registers[0]}, {variable.offset}($a3)")
                 variable.address_valid = True
                 
             # Indicar en el descriptor de direcciones que la variable ya no tiene su último valor válido en ningún registro, sino en el heap
@@ -75,9 +84,9 @@ class MIPSGenerator:
             
             # Saltar a la subrutina para revisar si la variable ya está en memoria estática
             # Preparar los argumentos para la subrutina
-            self.mips_code.append(f"li $a1, {data_address} # Cargar la direccion asignada para la variable '{symbol.name}' en memoria estatica")
-            self.mips_code.append(f"li $a2, {symbol.type.size} # Cargar los bytes que necesita del heap")
-            self.mips_code.append('jal check_existing_variable')
+            self.add_code(f"li $a1, {data_address} # Cargar la direccion asignada para la variable '{symbol.name}' en memoria estatica")
+            self.add_code(f"li $a2, {symbol.type.size} # Cargar los bytes que necesita del heap")
+            self.add_code('jal check_existing_variable')
         
         return
         
@@ -88,18 +97,24 @@ class MIPSGenerator:
         # Si es un número
         if isinstance(constant, float) or isinstance(constant, int):
             constant = float(constant)
-            self.mips_code.append(f"li.s $f1, {constant}")
+            self.add_code(f"li.s $f1, {constant}")
             
             # Obtener un registro disponible para mover el valor del registro float al registro entero
             register = self.get_reg(constant)
             
             # Mover el valor del registro float al registro entero
-            self.mips_code.append(f"mfc1 ${register['register']}, $f1")
+            self.add_code(f"mfc1 ${register['register']}, $f1")
             
             return register['register']
     
     # Param offset: Si no se envía un offset, únicamente se devuelve la dirección de memoria de la variable
     def load_variable(self, symbol, offset=0):
+        
+        if symbol.scope == 'SP':
+            function_register = self.get_reg(symbol.id)['register']
+            self.add_code(f'lw ${function_register}, {symbol.offset}($sp) # Obtener el valor de la variable "{symbol.name}" del stack')
+            
+            return function_register
         
         # Primero verificar si la variable destino ya tiene una dirección asignada
         self.allocate_memory(symbol) # Si no está en el descriptor de direcciones, se debe asignar una dirección del heap
@@ -120,7 +135,7 @@ class MIPSGenerator:
         if not address_already_loaded: # Si la dirección de la variable no estaba en un registro, se debe cargar en un registro
         
             # Cargar la dirección en el heap de la variable en el registro
-            self.mips_code.append(f"lw ${address_reg}, {address} # La direccion del heap de la variable '{symbol.name}' se carga en ${address_reg}")
+            self.add_code(f"lw ${address_reg}, {address} # La direccion del heap de la variable '{symbol.name}' se carga en ${address_reg}")
         
         # Actualizar el descriptor de registros
         self.register_descriptor[address_reg] = address
@@ -132,7 +147,7 @@ class MIPSGenerator:
         value_reg = self.get_reg(symbol.id)['register']
         
         # Cargar el valor de la dirección del heap en el registro
-        self.mips_code.append(f"lw ${value_reg}, {offset}(${address_reg}) # El valor de la variable '{symbol.name}' en el heap se carga en ${value_reg}")
+        self.add_code(f"lw ${value_reg}, {offset}(${address_reg}) # El valor de la variable '{symbol.name}' en el heap se carga en ${value_reg}")
         
         # Actualizar el descriptor de registros
         self.register_descriptor[value_reg] = symbol.id
@@ -216,16 +231,16 @@ class MIPSGenerator:
             
             # Se necesitan dos registros para hacer el reemplazo
             temp_reg =  temp_reg = next(reg for reg in self.register_descriptor.keys() if reg != register_to_replace)
-            self.mips_code.append(f'addi, $sp, $sp, -4 # Reservar espacio en el stack para almacenar el valor de temp_reg')
-            self.mips_code.append(f'sw ${temp_reg}, 0($sp) # Guardar el valor de temp_reg en el stack')
+            self.add_code(f'addi, $sp, $sp, -4 # Reservar espacio en el stack para almacenar el valor de temp_reg')
+            self.add_code(f'sw ${temp_reg}, 0($sp) # Guardar el valor de temp_reg en el stack')
             
             # Cargar la dirección del heap de la variable en un registro
-            self.mips_code.append(f"lw $t0, {self.address_descriptor[variable_to_replace].address}")
-            self.mips_code.append(f"sw {register_to_replace}, {self.address_descriptor[variable_to_replace].offset}(${temp_reg})")
+            self.add_code(f"lw $t0, {self.address_descriptor[variable_to_replace].address}")
+            self.add_code(f"sw {register_to_replace}, {self.address_descriptor[variable_to_replace].offset}(${temp_reg})")
             
             # Recuperar temp_reg del stack
-            self.mips_code.append(f'lw ${temp_reg}, 0($sp) # Recuperar el valor de temp_reg del stack')
-            self.mips_code.append(f'addi, $sp, $sp, 4 # Liberar espacio en el stack')
+            self.add_code(f'lw ${temp_reg}, 0($sp) # Recuperar el valor de temp_reg del stack')
+            self.add_code(f'addi, $sp, $sp, 4 # Liberar espacio en el stack')
             
             # Indicar en el descriptor de direcciones que la variable ya no tiene su último valor válido en el registro, sino en el heap
             self.address_descriptor[variable_to_replace].registers.remove(register_to_replace)
@@ -248,12 +263,18 @@ class MIPSGenerator:
             file.write("li $v0, 10\n")
             file.write("syscall\n")
             
+            # Escribir las subrutinas
+            for subroutine in self.subroutines:
+                file.write('\n')
+                for line in subroutine:
+                    file.write(f"{line}\n")
+            
             # Subrutina para revisar si la variable ya está en memoria estática
             # s0: Dirección de la variable en memoria estática
             # s1: Tamaño de la variable
             
             file.write('\ncheck_existing_variable:\n')
-            file.write('lw $s0, 0($a1) # Cargar la dirección de la variable en memoria estática\n')
+            file.write('lw $s0, 0($a1) # Cargar la direccion de la variable en memoria estatica\n')
             file.write('bnez $s0, end_check_existing_variable # Si la direccion (argumento 1) no es 0, regresar\n')
             file.write('save_variable:\n')
             file.write(f"li $v0, 9\n")
@@ -299,13 +320,40 @@ class MIPSGenerator:
                 
             elif isinstance(instruction, JumpInstruction):
                 self.jump(instruction)
+                
+            elif isinstance(instruction, CallInstruction):
+                self.call(instruction)
+                
+            elif isinstance(instruction, ReturnInstruction):
+                self.return_(instruction)
         
         self.write_code()
         
     def assign(self, instruction):
         dest = instruction.dest
         value = instruction.arg1
+        
+        if value == 'R':
+            return
             
+        # Si el scope de la variable destino es SP
+        
+        if dest.scope == 'SP':
+            dest_reg = self.load_variable(dest)
+            
+            # Verificar si el valor a asignar es una variable o una constante
+            if isinstance(value, Symbol):
+                value_reg = self.load_variable(value)
+                
+            else:
+                value_reg = self.load_constant(value)
+            
+            # Almacenar el valor en la dirección del stack de la variable destino
+            self.add_code(f"sw ${value_reg}, {dest.offset}($sp)")
+            
+            return
+        
+        
         # El último valor válido de la variable destino ahora debe apuntar al último valor válido de la variable value
         self.allocate_memory(dest) # Verificar si la variable destino ya tiene una dirección asignada
         
@@ -325,10 +373,10 @@ class MIPSGenerator:
             value_reg = self.load_constant(value)
             
         # Almacenar el valor en la dirección del heap de la variable destino
-        # self.mips_code.append(f"sw ${value_reg}, 0(${dest_reg})") # Si el valor debe cargarse de un offset de la variable, indicarlo
+        # self.add_code(f"sw ${value_reg}, 0(${dest_reg})") # Si el valor debe cargarse de un offset de la variable, indicarlo
         
         # Actualizar el descriptor de direcciones para indicar que la variable destino ya no tiene su último valor válido en memoria
-        self.address_descriptor[dest.id].registers.append(value_reg) # Último valor válido de la variable destino ahora es el valor de la variable value
+        self.address_descriptor[dest.id].registers = [value_reg] # Último valor válido de la variable destino ahora es el valor de la variable value
         self.address_descriptor[dest.id].address_valid = False
     
     def add(self, instruction):
@@ -338,27 +386,37 @@ class MIPSGenerator:
         arg2_reg = self.load_variable(instruction.arg2)
         
         # Mover el valor de las variables a un registro float
-        self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable arg1 en un registro float")
-        self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable arg2 en un registro float")
+        self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{instruction.arg1.name}' en un registro float")
+        self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{instruction.arg2.name}' en un registro float")
         
         # Liberar el registro de arg1
         self.current_instruction_register = None
         
         # Hacer la operación de floats
-        self.mips_code.append("add.s $f3, $f1, $f2")
+        self.add_code("add.s $f3, $f1, $f2")
+        
+        dest = instruction.dest
+        
         
         # Obtener un registro para guardar el resultado de la suma
         dest_reg = self.get_reg(instruction.dest.id)['register']
-        self.mips_code.append(f"mfc1 ${dest_reg}, $f3")
+        self.add_code(f"mfc1 ${dest_reg}, $f3 # Mover el resultado de la suma a un registro entero")
+        
+        if dest.scope == 'SP':
+            
+            # Almacenar el valor en la dirección del stack de la variable destino
+            self.add_code(f"sw ${dest_reg}, {dest.offset}($sp) # Almacenar el resultado de la suma a la posicion del stack de {dest.name}")
+            
+            return
         
         # Verificar que ya se tenga una dirección asignada para la variable destino
         self.allocate_memory(instruction.dest)
         
         # Almacenar el resultado en el registro de la variable destino
-        # self.mips_code.append(f"swc1 $f3, 0(${dest_reg})")
+        # self.add_code(f"swc1 $f3, 0(${dest_reg})")
         
         # Actualizar el descriptor de direcciones para indicar que la variable destino ya no tiene su último valor válido en memoria
-        self.address_descriptor[instruction.dest.id].registers.append(dest_reg)
+        self.address_descriptor[instruction.dest.id].registers = [dest_reg]
         self.address_descriptor[instruction.dest.id].address_valid = False
     
     def sub(self, instruction):
@@ -367,56 +425,56 @@ class MIPSGenerator:
         arg2_reg = self.load_variable(instruction.arg2)
         
         # Mover el valor de las variables a un registro float
-        self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable arg1 en un registro float")
-        self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable arg2 en un registro float")
+        self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{instruction.arg1.name}' en un registro float")
+        self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{instruction.arg2.name}' en un registro float")
         
         # Liberar el registro de arg1
         self.current_instruction_register = None
         
         # Hacer la operación de floats
-        self.mips_code.append("sub.s $f3, $f1, $f2")
+        self.add_code("sub.s $f3, $f1, $f2")
         
         # Obtener un registro para guardar el resultado de la suma
         dest_reg = self.get_reg(instruction.dest.id)['register']
-        self.mips_code.append(f"mfc1 ${dest_reg}, $f3")
+        self.add_code(f"mfc1 ${dest_reg}, $f3")
         
         # Verificar que ya se tenga una dirección asignada para la variable destino
         self.allocate_memory(instruction.dest)
         
         # Almacenar el resultado en el registro de la variable destino
-        # self.mips_code.append(f"swc1 $f3, 0(${dest_reg})")
+        # self.add_code(f"swc1 $f3, 0(${dest_reg})")
         
         # Actualizar el descriptor de direcciones para indicar que la variable destino ya no tiene su último valor válido en memoria
-        self.address_descriptor[instruction.dest.id].registers.append(dest_reg)
+        self.address_descriptor[instruction.dest.id].registers = [dest_reg]
         self.address_descriptor[instruction.dest.id].address_valid = False
         
     def mul(self, instruction):
-        # arg1 y arg2 siempre son variables (la suma siempre involucra temporales)
+       # arg1 y arg2 siempre son variables (la suma siempre involucra temporales)
         arg1_reg = self.load_variable(instruction.arg1)
         arg2_reg = self.load_variable(instruction.arg2)
         
         # Mover el valor de las variables a un registro float
-        self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable arg1 en un registro float")
-        self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable arg2 en un registro float")
+        self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{instruction.arg1.name}' en un registro float")
+        self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{instruction.arg2.name}' en un registro float")
         
         # Liberar el registro de arg1
         self.current_instruction_register = None
         
         # Hacer la operación de floats
-        self.mips_code.append("mul.s $f3, $f1, $f2")
+        self.add_code("mul.s $f3, $f1, $f2")
         
         # Obtener un registro para guardar el resultado de la suma
         dest_reg = self.get_reg(instruction.dest.id)['register']
-        self.mips_code.append(f"mfc1 ${dest_reg}, $f3")
+        self.add_code(f"mfc1 ${dest_reg}, $f3")
         
         # Verificar que ya se tenga una dirección asignada para la variable destino
         self.allocate_memory(instruction.dest)
         
         # Almacenar el resultado en el registro de la variable destino
-        # self.mips_code.append(f"swc1 $f3, 0(${dest_reg})")
+        # self.add_code(f"swc1 $f3, 0(${dest_reg})")
         
         # Actualizar el descriptor de direcciones para indicar que la variable destino ya no tiene su último valor válido en memoria
-        self.address_descriptor[instruction.dest.id].registers.append(dest_reg)
+        self.address_descriptor[instruction.dest.id].registers = [dest_reg]
         self.address_descriptor[instruction.dest.id].address_valid = False
         
     def div(self, instruction):
@@ -425,27 +483,27 @@ class MIPSGenerator:
         arg2_reg = self.load_variable(instruction.arg2)
         
         # Mover el valor de las variables a un registro float
-        self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable arg1 en un registro float")
-        self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable arg2 en un registro float")
+        self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{instruction.arg1.name}' en un registro float")
+        self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{instruction.arg2.name}' en un registro float")
         
         # Liberar el registro de arg1
         self.current_instruction_register = None
         
         # Hacer la operación de floats
-        self.mips_code.append("div.s $f3, $f1, $f2")
+        self.add_code("div.s $f3, $f1, $f2")
         
         # Obtener un registro para guardar el resultado de la suma
         dest_reg = self.get_reg(instruction.dest.id)['register']
-        self.mips_code.append(f"mfc1 ${dest_reg}, $f3")
+        self.add_code(f"mfc1 ${dest_reg}, $f3")
         
         # Verificar que ya se tenga una dirección asignada para la variable destino
         self.allocate_memory(instruction.dest)
         
         # Almacenar el resultado en el registro de la variable destino
-        # self.mips_code.append(f"swc1 $f3, 0(${dest_reg})")
+        # self.add_code(f"swc1 $f3, 0(${dest_reg})")
         
         # Actualizar el descriptor de direcciones para indicar que la variable destino ya no tiene su último valor válido en memoria
-        self.address_descriptor[instruction.dest.id].registers.append(dest_reg)
+        self.address_descriptor[instruction.dest.id].registers = [dest_reg]
         self.address_descriptor[instruction.dest.id].address_valid = False
         
     def print(self, instruction):
@@ -455,19 +513,26 @@ class MIPSGenerator:
         arg_reg = self.load_variable(arg)
         
         # Validar si el tipo de la variable es float
-        if isinstance(arg.type, NumberType) and arg.type.is_float:
+        if (isinstance(arg.type, NumberType) and arg.type.is_float) or isinstance(arg.type, AnyType):
             # Mover el valor la variable a un registro float
-            self.mips_code.append(f"mtc1 ${arg_reg}, $f1")
+            self.add_code(f"mtc1 ${arg_reg}, $f1")
             
             # Imprimir el valor de la variable
-            self.mips_code.append("li $v0, 2")
-            self.mips_code.append("mov.s $f12, $f1")
-            self.mips_code.append("syscall")
+            self.add_code("li $v0, 2")
+            self.add_code("mov.s $f12, $f1")
+            self.add_code("syscall")
             
     def label(self, instruction):
+        if instruction.func:
+            self.in_subroutine = True
+            self.subroutines.append([])
+            label = instruction.name
+            self.add_code(f"{label}:")
+            return
+        
         label = instruction.name
         self.check_ambiguous_region(label) # Chequear si se trata de la label de salida de una región ambigua
-        self.mips_code.append(f"{label}:")
+        self.add_code(f"{label}:")
         
     def jump(self, instruction):
         
@@ -484,7 +549,7 @@ class MIPSGenerator:
                 self.set_ambiguous_region_exit(label)
             
         if arg1 is None:
-            self.mips_code.append(f"j {label}")
+            self.add_code(f"j {label}")
             return
         
         arg1_reg = self.load_variable(arg1)
@@ -496,11 +561,11 @@ class MIPSGenerator:
             arg2_reg = self.load_variable(arg2)
             
             # Mover el valor las variables en un registro float
-            self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
-            self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{arg2.name}' en un registro float")
+            self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
+            self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{arg2.name}' en un registro float")
             
-            self.mips_code.append("c.lt.s $f2, $f1") # Si es menor que, se debe cambiar el orden de los registros
-            self.mips_code.append(f"bc1t {label}") # Saltar si es verdadero, porque $f1 >= $f2
+            self.add_code("c.lt.s $f2, $f1") # Si es menor que, se debe cambiar el orden de los registros
+            self.add_code(f"bc1t {label}") # Saltar si es verdadero, porque $f1 >= $f2
             
         elif op == '<':
             # El arg2 siempre es una variable
@@ -508,11 +573,11 @@ class MIPSGenerator:
             arg2_reg = self.load_variable(arg2)
             
             # Cargar el valor en el heap de las variables en un registro float
-            self.mips_code.append(f"lwc1 $f1, ${arg1_reg}")
-            self.mips_code.append(f"lwc1 $f2, ${arg2_reg}")
+            self.add_code(f"lwc1 $f1, ${arg1_reg}")
+            self.add_code(f"lwc1 $f2, ${arg2_reg}")
             
-            self.mips_code.append("c.lt.s $f1, $f2") # Si es menor que
-            self.mips_code.append(f"bc1f {label}") # Saltar si es verdadero
+            self.add_code("c.lt.s $f1, $f2") # Si es menor que
+            self.add_code(f"bc1f {label}") # Saltar si es verdadero
             
         elif op is None: # op = '=='
             
@@ -523,24 +588,47 @@ class MIPSGenerator:
                 arg2_reg = self.load_variable(arg2)
                 
                 # Mover el valor las variables en un registro float
-                self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
-                self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{arg2.name}' en un registro float")
+                self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
+                self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el ultimo valor valido de la variable '{arg2.name}' en un registro float")
                 
-                self.mips_code.append("c.eq.s $f1, $f2 # Si son iguales saltar") # Si es igual que
-                self.mips_code.append(f"bc1t {label}") # Saltar si es verdadero
+                self.add_code("c.eq.s $f1, $f2 # Si son iguales saltar") # Si es igual que
+                self.add_code(f"bc1t {label}") # Saltar si es verdadero
                 
             else:
                     
                     arg2_reg = self.load_constant(arg2)
-                    self.mips_code.append(f"mtc1 ${arg2_reg}, $f2 # Mover el valor de la constante '{arg2}' en un registro float")
+                    self.add_code(f"mtc1 ${arg2_reg}, $f2 # Mover el valor de la constante '{arg2}' en un registro float")
                     
                     # Mover el valor la variable a un registro float
-                    self.mips_code.append(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
+                    self.add_code(f"mtc1 ${arg1_reg}, $f1 # Mover el ultimo valor valido de la variable '{arg1.name}' en un registro float")
                     
-                    self.mips_code.append("c.eq.s $f1, $f2") # Si es igual que
-                    self.mips_code.append(f"bc1t {label}") # Saltar si es verdadero
+                    self.add_code("c.eq.s $f1, $f2") # Si es igual que
+                    self.add_code(f"bc1t {label}") # Saltar si es verdadero
                     
         return
-        
-        
+    
+    def call(self, instruction):
+            
+            label = instruction.label
+            arguments = instruction.arguments
+            stack_size = len(arguments) * 4
+            
+            # Reservar espacio en el stack para los argumentos
+            self.add_code(f"addi $sp, $sp, -{stack_size} # Reservar espacio en el stack para los argumentos")
+            
+            stack_offset = 0
+            
+            for arg in arguments:
+                arg_reg = self.load_variable(arg)
+                
+                # Guardar el valor de la variable en el stack
+                self.add_code(f"sw ${arg_reg}, {stack_offset}($sp)")
+                
+                stack_offset += 4
+                
+            self.add_code(f"jal {label}")
+            
+    def return_(self, instruction):
+        self.add_code("jr $ra")
+        self.in_subroutine = False
         

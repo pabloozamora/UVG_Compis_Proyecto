@@ -12,8 +12,9 @@ class ThreeAddressInstruction:
         return f"{self.dest}{'[' + str(self.offset) + ']' if self.offset is not None else ''} = {self.arg1} {self.op} {self.arg2}" if self.arg2 else f"{self.dest}{'[' + str(self.offset) + ']' if self.offset is not None else ''} {self.op} {self.arg1}{'[' + str(self.argOffset) + ']' if self.argOffset is not None else ''}"
     
 class Label:
-    def __init__(self, name):
+    def __init__(self, name, func=False):
         self.name = name
+        self.func = func
         
     def __str__(self):
         return f"{self.name}:"
@@ -41,6 +42,13 @@ class ParamInstruction:
         
     def __str__(self):
         return f"param {self.param}"
+    
+class ArgInstruction:
+    def __init__(self, arg):
+        self.arg = arg
+        
+    def __str__(self):
+        return f"arg {self.arg}"
     
 class ReturnInstruction:
     def __init__(self):
@@ -106,6 +114,10 @@ class IntermediateCodeGenerator:
         instruction = ParamInstruction(param)
         self.instructions.append(instruction)
         
+    def add_arg_instruction(self, arg):
+        instruction = ArgInstruction(arg)
+        self.instructions.append(instruction)
+        
     def add_return_instruction(self):
         instruction = ReturnInstruction()
         self.instructions.append(instruction)
@@ -139,8 +151,8 @@ class IntermediateCodeGenerator:
             self.label_count += 1
             return f"L{self.label_count}"
     
-    def add_label(self, label):
-        self.instructions.append(Label(label))
+    def add_label(self, label, func=False):
+        self.instructions.append(Label(label, func))
         
     def __str__(self):
         return "\n".join(str(instruction) for instruction in self.instructions)
