@@ -24,11 +24,14 @@ class JumpInstruction:
         self.arg1 = arg1
         self.arg2 = arg2
         self.op = op
+        self.ambiguous = False
         
     def __str__(self):
         if self.arg1 and self.op:
+            self.ambiguous = True
             return f"if {self.arg1} {self.op} {self.arg2} goto {self.label}"
         elif self.arg1:
+            self.ambiguous = True
             return f"if {self.arg1} == {self.arg2} goto {self.label}"
         return f"goto {self.label}"
     

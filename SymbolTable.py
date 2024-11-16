@@ -80,7 +80,7 @@ class NumberType:
 class BooleanType:
     def __init__(self):
         self.name = "boolean"
-        self.size = 1
+        self.size = 4
         
     def __repr__(self):
         return "BooleanType()"
