@@ -3,10 +3,10 @@ newline: .asciiz "\n"
 .text
 .globl main
 main:
-li $a1, 0x10000010 # Cargar la direccion asignada para la variable 't25-d1b2b760-cf99-4fc0-8bcd-bbaec6e35317' en memoria estatica
+li $a1, 0x10000010 # Cargar la direccion asignada para la variable 't25-f91b2b1f-2107-4277-8030-b30a869ceff7' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-lw $t1, 0x10000010 # La direccion del heap de la variable 't25-d1b2b760-cf99-4fc0-8bcd-bbaec6e35317' se carga en $t1
+lw $t1, 0x10000010 # La direccion del heap de la variable 't25-f91b2b1f-2107-4277-8030-b30a869ceff7' se carga en $t1
 li $t0, 80  # Cargar ASCII del caracter "P" en $t0
 sb $t0, 0($t1)  # Guardar el caracter en la direccion 0(0x10000010)
 li $t0, 97  # Cargar ASCII del caracter "a" en $t0
@@ -19,46 +19,46 @@ li $t0, 111  # Cargar ASCII del caracter "o" en $t0
 sb $t0, 4($t1)  # Guardar el caracter en la direccion 4(0x10000010)
 li $t0, 0  # Terminador nulo
 sb $t0, 5($t1)  # Guardar terminador nulo
-lw $t0, 0($t1) # El valor de la variable 't25-d1b2b760-cf99-4fc0-8bcd-bbaec6e35317' en el heap se carga en $t0
+lw $t0, 0($t1) # El valor de la variable 't25-f91b2b1f-2107-4277-8030-b30a869ceff7' en el heap se carga en $t0
 li $a1, 0x10000014 # Cargar la direccion asignada para la variable 'nombre' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li $a1, 0x10000018 # Cargar la direccion asignada para la variable 't26-c1a9b04c-669b-419d-a550-9ed4059a1a04' en memoria estatica
+li $a1, 0x10000018 # Cargar la direccion asignada para la variable 't26-84d200cd-7815-479e-b603-fc2a22e35f9e' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t2, 20
-li $a1, 0x1000001c # Cargar la direccion asignada para la variable 't27-d4e03325-ed65-4de0-9440-3c092cb0443d' en memoria estatica
+li $a1, 0x1000001c # Cargar la direccion asignada para la variable 't27-77d4d8d5-e724-46e2-a4bb-5aee90108f53' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-lw $t4, 0x1000001c # La direccion del heap de la variable 't27-d4e03325-ed65-4de0-9440-3c092cb0443d' se carga en $t4
+lw $t4, 0x1000001c # La direccion del heap de la variable 't27-77d4d8d5-e724-46e2-a4bb-5aee90108f53' se carga en $t4
 li $t3, 51  # Cargar ASCII del caracter "3" en $t3
 sb $t3, 0($t4)  # Guardar el caracter en la direccion 0(0x1000001c)
 li $t3, 0  # Terminador nulo
 sb $t3, 1($t4)  # Guardar terminador nulo
-lw $t3, 0($t4) # El valor de la variable 't27-d4e03325-ed65-4de0-9440-3c092cb0443d' en el heap se carga en $t3
-li $a1, 0x10000020 # Cargar la direccion asignada para la variable 't28-34ae3015-ff94-4860-8514-526e62adf7f2' en memoria estatica
+lw $t3, 0($t4) # El valor de la variable 't27-77d4d8d5-e724-46e2-a4bb-5aee90108f53' en el heap se carga en $t3
+li $a1, 0x10000020 # Cargar la direccion asignada para la variable 't28-8fcf2b12-ee5a-4fbe-9659-eaacf558ba38' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-lw $t5, 0x10000020 # La direccion del heap de la variable 't28-34ae3015-ff94-4860-8514-526e62adf7f2' se carga en $t5
-move $a0, $t5 # Guardar el valor de la variable 't28-34ae3015-ff94-4860-8514-526e62adf7f2' en a0
+lw $t5, 0x10000020 # La direccion del heap de la variable 't28-8fcf2b12-ee5a-4fbe-9659-eaacf558ba38' se carga en $t5
+move $a0, $t5 # Guardar el valor de la variable 't28-8fcf2b12-ee5a-4fbe-9659-eaacf558ba38' en a0
 move $a1, $t1 # Guardar el valor de la variable 'nombre' en a1
-move $a2, $t2 # Guardar el valor de la variable 't26-c1a9b04c-669b-419d-a550-9ed4059a1a04' en a2
-move $a3, $t4 # Guardar el valor de la variable 't27-d4e03325-ed65-4de0-9440-3c092cb0443d' en a3
+move $a2, $t2 # Guardar el valor de la variable 't26-84d200cd-7815-479e-b603-fc2a22e35f9e' en a2
+move $a3, $t4 # Guardar el valor de la variable 't27-77d4d8d5-e724-46e2-a4bb-5aee90108f53' en a3
 jal L_Estudiante_init_3
-lw $t0, 0x10000020 # La direccion del heap de la instancia 't28-34ae3015-ff94-4860-8514-526e62adf7f2' se carga en $t0
+lw $t0, 0x10000020 # La direccion del heap de la instancia 't28-8fcf2b12-ee5a-4fbe-9659-eaacf558ba38' se carga en $t0
 li $t1, 0x10000024 # La direccion de memoria estatica de la variable 'juan' se carga en $t1
-sw $t0, 0($t1) # Almacenar la direccion de memoria de la instancia 't28-34ae3015-ff94-4860-8514-526e62adf7f2' en la variable 'juan'
+sw $t0, 0($t1) # Almacenar la direccion de memoria de la instancia 't28-8fcf2b12-ee5a-4fbe-9659-eaacf558ba38' en la variable 'juan'
 move $a0, $t0 # Guardar el valor de la variable 'juan' en a0
 jal L_Persona_saludar_0
 move $t0, $v0  # Leer el valor de retorno desde la ultima posicion
-li $a1, 0x10000028 # Cargar la direccion asignada para la variable 't29-7e03f30b-5b5f-4ce0-9408-1a9fc6392bbe' en memoria estatica
+li $a1, 0x10000028 # Cargar la direccion asignada para la variable 't29-1061585d-9fef-4cce-8a59-5d416bf7392c' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 move $fp, $sp # Liberar espacio de variables locales y $ra
-li $a1, 0x1000002c # Cargar la direccion asignada para la variable 't30-c9123bfa-749b-4c39-8324-c845042116e5' en memoria estatica
+li $a1, 0x1000002c # Cargar la direccion asignada para la variable 't30-a9de6681-d064-4084-9330-cbe5e102f779' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-lw $t2, 0x1000002c # La direccion del heap de la variable 't30-c9123bfa-749b-4c39-8324-c845042116e5' se carga en $t2
+lw $t2, 0x1000002c # La direccion del heap de la variable 't30-a9de6681-d064-4084-9330-cbe5e102f779' se carga en $t2
 li $t1, 77  # Cargar ASCII del caracter "M" en $t1
 sb $t1, 0($t2)  # Guardar el caracter en la direccion 0(0x1000002c)
 li $t1, 105  # Cargar ASCII del caracter "i" en $t1
@@ -99,14 +99,14 @@ li $t1, 32  # Cargar ASCII del caracter " " en $t1
 sb $t1, 18($t2)  # Guardar el caracter en la direccion 18(0x1000002c)
 li $t1, 0  # Terminador nulo
 sb $t1, 19($t2)  # Guardar terminador nulo
-lw $t1, 0($t2) # El valor de la variable 't30-c9123bfa-749b-4c39-8324-c845042116e5' en el heap se carga en $t1
+lw $t1, 0($t2) # El valor de la variable 't30-a9de6681-d064-4084-9330-cbe5e102f779' en el heap se carga en $t1
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t2  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
-li $a1, 0x10000030 # Cargar la direccion asignada para la variable 't31-8851b76d-88f7-469d-923a-e713b167b370' en memoria estatica
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
+li $a1, 0x10000030 # Cargar la direccion asignada para la variable 't31-4fd1422a-e5db-4fc6-97e9-3a9c52539109' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 lw $t3, 0x10000024 # La direccion del heap de la variable 'juan' se carga en $t3
@@ -114,53 +114,53 @@ lw $t4, 4($t3) # Cargar el valor de la propiedad de la instancia 'juan' en $t3
 li $v0, 1       # Codigo de syscall para imprimir enteros
 move $a0, $t4  # Mover el valor del entero al registro $a0
 syscall         # Imprimir el valor en $a0
-la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+la $a0, newline # Cargar la direccion de la cadena '\n'
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 move $a0, $t3 # Guardar el valor de la variable 'juan' en a0
 jal L_Estudiante_estudiar_0
 move $t0, $v0  # Leer el valor de retorno desde la ultima posicion
-li $a1, 0x10000034 # Cargar la direccion asignada para la variable 't32-7b217f15-fb18-49fe-bf76-cac65fe3a006' en memoria estatica
+li $a1, 0x10000034 # Cargar la direccion asignada para la variable 't32-50c9fbac-9981-436a-8316-4a9286dc0696' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 move $fp, $sp # Liberar espacio de variables locales y $ra
-li $a1, 0x10000038 # Cargar la direccion asignada para la variable 't33-bf9feb39-985b-4458-9bdc-aca0f2576200' en memoria estatica
+li $a1, 0x10000038 # Cargar la direccion asignada para la variable 't33-0653aa0d-7198-4493-88b4-d3a07f191309' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t1, 5
 lw $t2, 0x10000024 # La direccion del heap de la variable 'juan' se carga en $t2
 move $a0, $t2 # Guardar el valor de la variable 'juan' en a0
-move $a1, $t1 # Guardar el valor de la variable 't33-bf9feb39-985b-4458-9bdc-aca0f2576200' en a1
+move $a1, $t1 # Guardar el valor de la variable 't33-0653aa0d-7198-4493-88b4-d3a07f191309' en a1
 jal L_Persona_incrementarEdad_1
 move $t0, $v0  # Leer el valor de retorno desde la ultima posicion
-li $a1, 0x1000003c # Cargar la direccion asignada para la variable 't34-73ccf9c4-165c-4371-a70a-6c42d3e193a1' en memoria estatica
+li $a1, 0x1000003c # Cargar la direccion asignada para la variable 't34-c756db86-f1fb-4e4d-936b-57b5553a0124' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 move $fp, $sp # Liberar espacio de variables locales y $ra
-li $a1, 0x10000040 # Cargar la direccion asignada para la variable 't35-2b63a26b-5ae5-4f66-905f-9b41b056757e' en memoria estatica
+li $a1, 0x10000040 # Cargar la direccion asignada para la variable 't35-b37306be-e681-4a0f-b05b-3f7bddea5453' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t1, 20
-li $a1, 0x10000044 # Cargar la direccion asignada para la variable 't36-4b4878fb-8b5a-4cf6-8ec8-ba00cb9c31b9' en memoria estatica
+li $a1, 0x10000044 # Cargar la direccion asignada para la variable 't36-d0f155f2-804c-4015-af09-23c5fa72a770' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t2, 30
-li $a1, 0x10000048 # Cargar la direccion asignada para la variable 't37-60e99630-a25b-4206-aabd-5462b0a2721c' en memoria estatica
+li $a1, 0x10000048 # Cargar la direccion asignada para la variable 't37-c74f386a-844a-4528-9169-4887da934f99' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t3, 40
 lw $t4, 0x10000024 # La direccion del heap de la variable 'juan' se carga en $t4
 move $a0, $t4 # Guardar el valor de la variable 'juan' en a0
-move $a1, $t1 # Guardar el valor de la variable 't35-2b63a26b-5ae5-4f66-905f-9b41b056757e' en a1
-move $a2, $t2 # Guardar el valor de la variable 't36-4b4878fb-8b5a-4cf6-8ec8-ba00cb9c31b9' en a2
-move $a3, $t3 # Guardar el valor de la variable 't37-60e99630-a25b-4206-aabd-5462b0a2721c' en a3
+move $a1, $t1 # Guardar el valor de la variable 't35-b37306be-e681-4a0f-b05b-3f7bddea5453' en a1
+move $a2, $t2 # Guardar el valor de la variable 't36-d0f155f2-804c-4015-af09-23c5fa72a770' en a2
+move $a3, $t3 # Guardar el valor de la variable 't37-c74f386a-844a-4528-9169-4887da934f99' en a3
 jal L_Estudiante_promedioNotas_3
 move $t0, $v0  # Leer el valor de retorno desde la ultima posicion
-li $a1, 0x1000004c # Cargar la direccion asignada para la variable 't38-9a57ce6d-91d0-4545-818c-9aad0a9b8e89' en memoria estatica
+li $a1, 0x1000004c # Cargar la direccion asignada para la variable 't38-be05ea19-c5c6-46aa-bea1-596ca4646047' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 move $fp, $sp # Liberar espacio de variables locales y $ra
-li $a1, 0x10000050 # Cargar la direccion asignada para la variable 't39-2ddcad4a-f029-4175-8620-1c0745c867f0' en memoria estatica
+li $a1, 0x10000050 # Cargar la direccion asignada para la variable 't39-ce2c770b-871e-4a91-8113-7222fc813ec2' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 lw $t1, 0x10000024 # La direccion del heap de la variable 'juan' se carga en $t1
@@ -168,46 +168,46 @@ lw $t2, 4($t1) # Cargar el valor de la propiedad de la instancia 'juan' en $t1
 li $a1, 0x10000054 # Cargar la direccion asignada para la variable 'edad' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li $a1, 0x10000058 # Cargar la direccion asignada para la variable 't40-95f88225-fb80-49e8-8043-8464ed1f12a3' en memoria estatica
+li $a1, 0x10000058 # Cargar la direccion asignada para la variable 't40-2a5e2a8a-2a48-40a3-b91b-d730405eb21a' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t3, 2
-mul $t4, $t2, $t3 # Multiplicar los valores de edad y t40-95f88225-fb80-49e8-8043-8464ed1f12a3
-li $a1, 0x1000005c # Cargar la direccion asignada para la variable 't41-2914e0f0-84c6-4c02-a769-8f29214852fa' en memoria estatica
+mul $t4, $t2, $t3 # Multiplicar los valores de edad y t40-2a5e2a8a-2a48-40a3-b91b-d730405eb21a
+li $a1, 0x1000005c # Cargar la direccion asignada para la variable 't41-e93cf268-b1aa-47e0-b507-45ed37a4b104' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li $a1, 0x10000060 # Cargar la direccion asignada para la variable 't42-18bb5223-0589-4559-947c-2f51186daeae' en memoria estatica
+li $a1, 0x10000060 # Cargar la direccion asignada para la variable 't42-86bf6fbe-fa22-4bd1-887c-b5fc480ce22e' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t5, 5
-li $a1, 0x10000064 # Cargar la direccion asignada para la variable 't43-8a15fdfe-5a83-445d-86d5-ba6640af5817' en memoria estatica
+li $a1, 0x10000064 # Cargar la direccion asignada para la variable 't43-1940c3a9-b941-47e1-852f-511704791918' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t6, 3
-sub $t7, $t5, $t6 # Restar los valores de t42-18bb5223-0589-4559-947c-2f51186daeae y t43-8a15fdfe-5a83-445d-86d5-ba6640af5817
-li $a1, 0x10000068 # Cargar la direccion asignada para la variable 't44-dee51538-1880-49f0-b374-4b939ec7c58b' en memoria estatica
+sub $t7, $t5, $t6 # Restar los valores de t42-86bf6fbe-fa22-4bd1-887c-b5fc480ce22e y t43-1940c3a9-b941-47e1-852f-511704791918
+li $a1, 0x10000068 # Cargar la direccion asignada para la variable 't44-b8e8de9f-5890-4749-90cc-b682bad35916' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li $a1, 0x1000006c # Cargar la direccion asignada para la variable 't45-e7969988-fc7f-4f02-a1b4-6befa7910158' en memoria estatica
+li $a1, 0x1000006c # Cargar la direccion asignada para la variable 't45-2325cda5-9138-47a9-88d4-e57bbf61f076' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $t3, 2
-div $t7, $t3 # Dividir los valores de t44-dee51538-1880-49f0-b374-4b939ec7c58b y t45-e7969988-fc7f-4f02-a1b4-6befa7910158
-mflo $t0 # Obtener el cociente de la división
-li $a1, 0x10000070 # Cargar la direccion asignada para la variable 't46-2e12cfd6-9f1e-4c52-894e-322496b7ae19' en memoria estatica
+div $t7, $t3 # Dividir los valores de t44-b8e8de9f-5890-4749-90cc-b682bad35916 y t45-2325cda5-9138-47a9-88d4-e57bbf61f076
+mflo $t0 # Obtener el cociente de la division
+li $a1, 0x10000070 # Cargar la direccion asignada para la variable 't46-5d4c1afb-a28e-41cd-9914-e481fd133a8a' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-add $t1, $t4, $t0 # Sumar los valores de t41-2914e0f0-84c6-4c02-a769-8f29214852fa y t46-2e12cfd6-9f1e-4c52-894e-322496b7ae19
-li $a1, 0x10000074 # Cargar la direccion asignada para la variable 't47-22066a0d-abfe-42bf-a609-f9d8302b7dc0' en memoria estatica
+add $t1, $t4, $t0 # Sumar los valores de t41-e93cf268-b1aa-47e0-b507-45ed37a4b104 y t46-5d4c1afb-a28e-41cd-9914-e481fd133a8a
+li $a1, 0x10000074 # Cargar la direccion asignada para la variable 't47-bf79d066-f11d-489e-91cf-5f28847cbc2f' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
 li $a1, 0x10000078 # Cargar la direccion asignada para la variable 'resultado' en memoria estatica
 li $a2, 4 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-li $a1, 0x1000007c # Cargar la direccion asignada para la variable 't48-53757b29-9ec5-48b7-9b3a-96fadc69107e' en memoria estatica
+li $a1, 0x1000007c # Cargar la direccion asignada para la variable 't48-abad569c-1000-482b-a96b-495221c4f68c' en memoria estatica
 li $a2, 255 # Cargar los bytes que necesita del heap
 jal check_existing_variable
-lw $t3, 0x1000007c # La direccion del heap de la variable 't48-53757b29-9ec5-48b7-9b3a-96fadc69107e' se carga en $t3
+lw $t3, 0x1000007c # La direccion del heap de la variable 't48-abad569c-1000-482b-a96b-495221c4f68c' se carga en $t3
 li $t2, 82  # Cargar ASCII del caracter "R" en $t2
 sb $t2, 0($t3)  # Guardar el caracter en la direccion 0(0x1000007c)
 li $t2, 101  # Cargar ASCII del caracter "e" en $t2
@@ -264,19 +264,19 @@ li $t2, 32  # Cargar ASCII del caracter " " en $t2
 sb $t2, 26($t3)  # Guardar el caracter en la direccion 26(0x1000007c)
 li $t2, 0  # Terminador nulo
 sb $t2, 27($t3)  # Guardar terminador nulo
-lw $t2, 0($t3) # El valor de la variable 't48-53757b29-9ec5-48b7-9b3a-96fadc69107e' en el heap se carga en $t2
+lw $t2, 0($t3) # El valor de la variable 't48-abad569c-1000-482b-a96b-495221c4f68c' en el heap se carga en $t2
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t3  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 li $v0, 1       # Codigo de syscall para imprimir enteros
 move $a0, $t1  # Mover el valor del entero al registro $a0
 syscall         # Imprimir el valor en $a0
-la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+la $a0, newline # Cargar la direccion de la cadena '\n'
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 li $v0, 10
 syscall
 
@@ -297,9 +297,9 @@ lw $t3, 8($fp) # La direccion del stack de la variable 'self' se carga en $t3
 sw $t2, 4($t3) # Almacenar el valor de la variable 'self' en el heap
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t4, $fp, 20 # La direccion del stack de la variable 't0-3c72176e-6c80-4d1c-bfa3-2b4cc5788706' se carga en $t4
-sw $s1, 0($t4) # Almacenar la direccion de memoria de la cadena 't0-3c72176e-6c80-4d1c-bfa3-2b4cc5788706' en el stack
-lw $t4, 0($t4) # La direccion de memoria de la cadena 't0-3c72176e-6c80-4d1c-bfa3-2b4cc5788706' se carga en $t4
+addi $t4, $fp, 20 # La direccion del stack de la variable 't0-d79f5752-466b-457c-8b08-59b9dc696f54' se carga en $t4
+sw $s1, 0($t4) # Almacenar la direccion de memoria de la cadena 't0-d79f5752-466b-457c-8b08-59b9dc696f54' en el stack
+lw $t4, 0($t4) # La direccion de memoria de la cadena 't0-d79f5752-466b-457c-8b08-59b9dc696f54' se carga en $t4
 li $t5, 114  # Cargar ASCII del caracter "r" en $t5
 sb $t5, 0($t4)  # Guardar el caracter en la direccion 0(20)
 li $t5, 111  # Cargar ASCII del caracter "o" en $t5
@@ -310,7 +310,7 @@ li $t5, 111  # Cargar ASCII del caracter "o" en $t5
 sb $t5, 3($t4)  # Guardar el caracter en la direccion 3(20)
 li $t5, 0  # Terminador nulo
 sb $t5, 4($t4) # Guardar terminador nulo
-lw $t6, 20($fp) # Obtener el valor de la variable "t0-3c72176e-6c80-4d1c-bfa3-2b4cc5788706" del stack
+lw $t6, 20($fp) # Obtener el valor de la variable "t0-d79f5752-466b-457c-8b08-59b9dc696f54" del stack
 lw $t7, 8($fp) # La direccion del stack de la variable 'self' se carga en $t7
 sw $t6, 8($t7) # Almacenar el valor de la variable 'self' en el heap
 addi $sp, $sp, 20     # Limpiar espacio de variables locales
@@ -328,9 +328,9 @@ addi $sp, $sp, -20   # Reservar espacio para variables locales
 sw $a0, 8($fp) # Guardar el valor de la variable 'self' en el stack
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t0, $fp, 12 # La direccion del stack de la variable 't1-2059211d-4763-4d74-bd57-e68e1a4973cc' se carga en $t0
-sw $s1, 0($t0) # Almacenar la direccion de memoria de la cadena 't1-2059211d-4763-4d74-bd57-e68e1a4973cc' en el stack
-lw $t0, 0($t0) # La direccion de memoria de la cadena 't1-2059211d-4763-4d74-bd57-e68e1a4973cc' se carga en $t0
+addi $t0, $fp, 12 # La direccion del stack de la variable 't1-fefa9071-f4fb-4723-a61f-aa074ab7295a' se carga en $t0
+sw $s1, 0($t0) # Almacenar la direccion de memoria de la cadena 't1-fefa9071-f4fb-4723-a61f-aa074ab7295a' en el stack
+lw $t0, 0($t0) # La direccion de memoria de la cadena 't1-fefa9071-f4fb-4723-a61f-aa074ab7295a' se carga en $t0
 li $t1, 72  # Cargar ASCII del caracter "H" en $t1
 sb $t1, 0($t0)  # Guardar el caracter en la direccion 0(12)
 li $t1, 111  # Cargar ASCII del caracter "o" en $t1
@@ -373,14 +373,14 @@ li $t1, 0  # Terminador nulo
 sb $t1, 19($t0) # Guardar terminador nulo
 lw $t2, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t2, 0($t2) # Obtener el valor de la propiedad 0 de la variable "self" del heap
-sw $t2, 16($fp) # guardar el valor de la variable 't2-1cedcf8b-ee63-4817-b618-62a2d2edd8b9' en el stack
-lw $t3, 12($fp) # La direccion del heap de la variable 't1-2059211d-4763-4d74-bd57-e68e1a4973cc' se carga en $t3
-lw $t4, 16($fp) # La direccion del heap de la variable 't2-1cedcf8b-ee63-4817-b618-62a2d2edd8b9' se carga en $t4
+sw $t2, 16($fp) # guardar el valor de la variable 't2-17517460-f038-4977-a272-40fa1ad1318f' en el stack
+lw $t3, 12($fp) # La direccion del heap de la variable 't1-fefa9071-f4fb-4723-a61f-aa074ab7295a' se carga en $t3
+lw $t4, 16($fp) # La direccion del heap de la variable 't2-17517460-f038-4977-a272-40fa1ad1318f' se carga en $t4
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t5, $fp, 20 # La direccion del stack de la variable 't3-ce4365ae-d3cb-4dc5-9239-cfd889ea2a6c' se carga en $t5
-sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't3-ce4365ae-d3cb-4dc5-9239-cfd889ea2a6c' en el stack
-lw $t5, 0($t5) # La direccion de memoria de la cadena 't3-ce4365ae-d3cb-4dc5-9239-cfd889ea2a6c' se carga en $t5
+addi $t5, $fp, 20 # La direccion del stack de la variable 't3-50b98246-f288-434a-b49b-513ea7bb3ae5' se carga en $t5
+sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't3-50b98246-f288-434a-b49b-513ea7bb3ae5' en el stack
+lw $t5, 0($t5) # La direccion de memoria de la cadena 't3-50b98246-f288-434a-b49b-513ea7bb3ae5' se carga en $t5
 move $s0, $t3 # Direccion de la cadena a copiar
 move $s3, $t5 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -388,13 +388,13 @@ jal copy_string # Concatenar cadenas
 move $s0, $t4 # Direccion de la cadena a copiar
 move $s3, $t5 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
-lw $t6, 20($fp) # Cargar la dirección en el stack de la variable "t3-ce4365ae-d3cb-4dc5-9239-cfd889ea2a6c"
+lw $t6, 20($fp) # Cargar la dirección en el stack de la variable "t3-50b98246-f288-434a-b49b-513ea7bb3ae5"
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t6  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $v0, 16($fp)  # Leer el valor de retorno desde la ultima posicion
 addi $sp, $sp, 20     # Limpiar espacio de variables locales
 lw $fp, 4($sp)        # Restaurar $fp
@@ -412,19 +412,19 @@ sw $a0, 8($fp) # Guardar el valor de la variable 'self' en el stack
 sw $a1, 12($fp) # Guardar el valor de la variable 'anos' en el stack
 lw $t0, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t0, 4($t0) # Obtener el valor de la propiedad 4 de la variable "self" del heap
-sw $t0, 16($fp) # guardar el valor de la variable 't4-b4e31c2f-5361-4139-876f-2cbac597d8d4' en el stack
-lw $t1, 16($fp) # Obtener el valor de la variable "t4-b4e31c2f-5361-4139-876f-2cbac597d8d4" del stack
+sw $t0, 16($fp) # guardar el valor de la variable 't4-dc23d236-79e4-4034-9b67-12ff57806a8e' en el stack
+lw $t1, 16($fp) # Obtener el valor de la variable "t4-dc23d236-79e4-4034-9b67-12ff57806a8e" del stack
 lw $t2, 12($fp) # Obtener el valor de la variable "anos" del stack
-add $t3, $t1, $t2 # Sumar los valores de t4-b4e31c2f-5361-4139-876f-2cbac597d8d4 y anos
-sw $t3, 20($fp) # Almacenar el resultado de la suma en t5-a78fc5ec-5ead-4fdd-9fe6-6b275b4f5056
-lw $t3, 20($fp) # Obtener el valor de la variable "t5-a78fc5ec-5ead-4fdd-9fe6-6b275b4f5056" del stack
+add $t3, $t1, $t2 # Sumar los valores de t4-dc23d236-79e4-4034-9b67-12ff57806a8e y anos
+sw $t3, 20($fp) # Almacenar el resultado de la suma en t5-ea4dcc65-fcec-4c08-8030-e1bed96abe51
+lw $t3, 20($fp) # Obtener el valor de la variable "t5-ea4dcc65-fcec-4c08-8030-e1bed96abe51" del stack
 lw $t4, 8($fp) # La direccion del stack de la variable 'self' se carga en $t4
 sw $t3, 4($t4) # Almacenar el valor de la variable 'self' en el heap
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t5, $fp, 24 # La direccion del stack de la variable 't6-08f93921-965d-438d-bc5d-418dbc7d0072' se carga en $t5
-sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't6-08f93921-965d-438d-bc5d-418dbc7d0072' en el stack
-lw $t5, 0($t5) # La direccion de memoria de la cadena 't6-08f93921-965d-438d-bc5d-418dbc7d0072' se carga en $t5
+addi $t5, $fp, 24 # La direccion del stack de la variable 't6-8f32006e-0503-45f7-973c-322d42f505cc' se carga en $t5
+sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't6-8f32006e-0503-45f7-973c-322d42f505cc' en el stack
+lw $t5, 0($t5) # La direccion de memoria de la cadena 't6-8f32006e-0503-45f7-973c-322d42f505cc' se carga en $t5
 li $t6, 65  # Cargar ASCII del caracter "A" en $t6
 sb $t6, 0($t5)  # Guardar el caracter en la direccion 0(24)
 li $t6, 104  # Cargar ASCII del caracter "h" en $t6
@@ -453,23 +453,23 @@ li $t6, 58  # Cargar ASCII del caracter ":" en $t6
 sb $t6, 12($t5)  # Guardar el caracter en la direccion 12(24)
 li $t6, 0  # Terminador nulo
 sb $t6, 13($t5) # Guardar terminador nulo
-lw $t7, 24($fp) # Cargar la dirección en el stack de la variable "t6-08f93921-965d-438d-bc5d-418dbc7d0072"
+lw $t7, 24($fp) # Cargar la dirección en el stack de la variable "t6-8f32006e-0503-45f7-973c-322d42f505cc"
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t7  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $t0, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t0, 4($t0) # Obtener el valor de la propiedad 4 de la variable "self" del heap
-sw $t0, 28($fp) # guardar el valor de la variable 't7-70ede31e-3008-4f30-ae12-0672e55be864' en el stack
-lw $t1, 28($fp) # Cargar la dirección en el stack de la variable "t7-70ede31e-3008-4f30-ae12-0672e55be864"
+sw $t0, 28($fp) # guardar el valor de la variable 't7-c0a46848-0700-4e05-bb1c-197362cf9e7b' en el stack
+lw $t1, 28($fp) # Cargar la dirección en el stack de la variable "t7-c0a46848-0700-4e05-bb1c-197362cf9e7b"
 li $v0, 1       # Codigo de syscall para imprimir enteros
 move $a0, $t1  # Mover el valor del entero al registro $a0
 syscall         # Imprimir el valor en $a0
-la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+la $a0, newline # Cargar la direccion de la cadena '\n'
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $v0, 28($fp)  # Leer el valor de retorno desde la ultima posicion
 addi $sp, $sp, 28     # Limpiar espacio de variables locales
 lw $fp, 4($sp)        # Restaurar $fp
@@ -515,12 +515,12 @@ addi $sp, $sp, -36   # Reservar espacio para variables locales
 sw $a0, 8($fp) # Guardar el valor de la variable 'self' en el stack
 lw $t0, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t0, 0($t0) # Obtener el valor de la propiedad 0 de la variable "self" del heap
-sw $t0, 12($fp) # guardar el valor de la variable 't9-1537391b-ca19-499d-ad60-6ab525735334' en el stack
+sw $t0, 12($fp) # guardar el valor de la variable 't9-95fc7b61-b6fb-452c-8b8d-fdafabc5c35f' en el stack
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t1, $fp, 16 # La direccion del stack de la variable 't10-aac45f5f-350f-42c5-881f-273bcfb65251' se carga en $t1
-sw $s1, 0($t1) # Almacenar la direccion de memoria de la cadena 't10-aac45f5f-350f-42c5-881f-273bcfb65251' en el stack
-lw $t1, 0($t1) # La direccion de memoria de la cadena 't10-aac45f5f-350f-42c5-881f-273bcfb65251' se carga en $t1
+addi $t1, $fp, 16 # La direccion del stack de la variable 't10-30818409-6e95-412c-b896-4ba67e1308c1' se carga en $t1
+sw $s1, 0($t1) # Almacenar la direccion de memoria de la cadena 't10-30818409-6e95-412c-b896-4ba67e1308c1' en el stack
+lw $t1, 0($t1) # La direccion de memoria de la cadena 't10-30818409-6e95-412c-b896-4ba67e1308c1' se carga en $t1
 li $t2, 32  # Cargar ASCII del caracter " " en $t2
 sb $t2, 0($t1)  # Guardar el caracter en la direccion 0(16)
 li $t2, 101  # Cargar ASCII del caracter "e" en $t2
@@ -563,13 +563,13 @@ li $t2, 32  # Cargar ASCII del caracter " " en $t2
 sb $t2, 19($t1)  # Guardar el caracter en la direccion 19(16)
 li $t2, 0  # Terminador nulo
 sb $t2, 20($t1) # Guardar terminador nulo
-lw $t3, 12($fp) # La direccion del heap de la variable 't9-1537391b-ca19-499d-ad60-6ab525735334' se carga en $t3
-lw $t4, 16($fp) # La direccion del heap de la variable 't10-aac45f5f-350f-42c5-881f-273bcfb65251' se carga en $t4
+lw $t3, 12($fp) # La direccion del heap de la variable 't9-95fc7b61-b6fb-452c-8b8d-fdafabc5c35f' se carga en $t3
+lw $t4, 16($fp) # La direccion del heap de la variable 't10-30818409-6e95-412c-b896-4ba67e1308c1' se carga en $t4
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t5, $fp, 20 # La direccion del stack de la variable 't11-2bedd911-749d-493e-8635-28e63796fcca' se carga en $t5
-sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't11-2bedd911-749d-493e-8635-28e63796fcca' en el stack
-lw $t5, 0($t5) # La direccion de memoria de la cadena 't11-2bedd911-749d-493e-8635-28e63796fcca' se carga en $t5
+addi $t5, $fp, 20 # La direccion del stack de la variable 't11-344ec4a1-9a7c-4d0a-a857-51d877436ae9' se carga en $t5
+sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't11-344ec4a1-9a7c-4d0a-a857-51d877436ae9' en el stack
+lw $t5, 0($t5) # La direccion de memoria de la cadena 't11-344ec4a1-9a7c-4d0a-a857-51d877436ae9' se carga en $t5
 move $s0, $t3 # Direccion de la cadena a copiar
 move $s3, $t5 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -579,14 +579,14 @@ move $s3, $t5 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
 lw $t6, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t6, 12($t6) # Obtener el valor de la propiedad 12 de la variable "self" del heap
-sw $t6, 24($fp) # guardar el valor de la variable 't12-dd4ee8c4-db11-4f02-9224-ca5148dec4a3' en el stack
-lw $t7, 20($fp) # La direccion del heap de la variable 't11-2bedd911-749d-493e-8635-28e63796fcca' se carga en $t7
-lw $t0, 24($fp) # La direccion del heap de la variable 't12-dd4ee8c4-db11-4f02-9224-ca5148dec4a3' se carga en $t0
+sw $t6, 24($fp) # guardar el valor de la variable 't12-50c28958-63f9-43b9-b89e-08ae9b6fb6f7' en el stack
+lw $t7, 20($fp) # La direccion del heap de la variable 't11-344ec4a1-9a7c-4d0a-a857-51d877436ae9' se carga en $t7
+lw $t0, 24($fp) # La direccion del heap de la variable 't12-50c28958-63f9-43b9-b89e-08ae9b6fb6f7' se carga en $t0
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t1, $fp, 28 # La direccion del stack de la variable 't13-71cdf36e-83db-4d4f-86e2-8e7448670588' se carga en $t1
-sw $s1, 0($t1) # Almacenar la direccion de memoria de la cadena 't13-71cdf36e-83db-4d4f-86e2-8e7448670588' en el stack
-lw $t1, 0($t1) # La direccion de memoria de la cadena 't13-71cdf36e-83db-4d4f-86e2-8e7448670588' se carga en $t1
+addi $t1, $fp, 28 # La direccion del stack de la variable 't13-d98aa261-64e7-4a8c-89f9-e7d8ba819f84' se carga en $t1
+sw $s1, 0($t1) # Almacenar la direccion de memoria de la cadena 't13-d98aa261-64e7-4a8c-89f9-e7d8ba819f84' en el stack
+lw $t1, 0($t1) # La direccion de memoria de la cadena 't13-d98aa261-64e7-4a8c-89f9-e7d8ba819f84' se carga en $t1
 move $s0, $t7 # Direccion de la cadena a copiar
 move $s3, $t1 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -596,9 +596,9 @@ move $s3, $t1 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t2, $fp, 32 # La direccion del stack de la variable 't14-770c4d8e-2229-43f1-b57c-4c2118e56ab6' se carga en $t2
-sw $s1, 0($t2) # Almacenar la direccion de memoria de la cadena 't14-770c4d8e-2229-43f1-b57c-4c2118e56ab6' en el stack
-lw $t2, 0($t2) # La direccion de memoria de la cadena 't14-770c4d8e-2229-43f1-b57c-4c2118e56ab6' se carga en $t2
+addi $t2, $fp, 32 # La direccion del stack de la variable 't14-58c7a6aa-267e-4b4a-b30e-a5650c4cb5ca' se carga en $t2
+sw $s1, 0($t2) # Almacenar la direccion de memoria de la cadena 't14-58c7a6aa-267e-4b4a-b30e-a5650c4cb5ca' en el stack
+lw $t2, 0($t2) # La direccion de memoria de la cadena 't14-58c7a6aa-267e-4b4a-b30e-a5650c4cb5ca' se carga en $t2
 li $t3, 32  # Cargar ASCII del caracter " " en $t3
 sb $t3, 0($t2)  # Guardar el caracter en la direccion 0(32)
 li $t3, 103  # Cargar ASCII del caracter "g" en $t3
@@ -613,13 +613,13 @@ li $t3, 111  # Cargar ASCII del caracter "o" en $t3
 sb $t3, 5($t2)  # Guardar el caracter en la direccion 5(32)
 li $t3, 0  # Terminador nulo
 sb $t3, 6($t2) # Guardar terminador nulo
-lw $t4, 28($fp) # La direccion del heap de la variable 't13-71cdf36e-83db-4d4f-86e2-8e7448670588' se carga en $t4
-lw $t5, 32($fp) # La direccion del heap de la variable 't14-770c4d8e-2229-43f1-b57c-4c2118e56ab6' se carga en $t5
+lw $t4, 28($fp) # La direccion del heap de la variable 't13-d98aa261-64e7-4a8c-89f9-e7d8ba819f84' se carga en $t4
+lw $t5, 32($fp) # La direccion del heap de la variable 't14-58c7a6aa-267e-4b4a-b30e-a5650c4cb5ca' se carga en $t5
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t6, $fp, 36 # La direccion del stack de la variable 't15-653bfa13-b1ae-4f4f-a4ee-7b69c71155f6' se carga en $t6
-sw $s1, 0($t6) # Almacenar la direccion de memoria de la cadena 't15-653bfa13-b1ae-4f4f-a4ee-7b69c71155f6' en el stack
-lw $t6, 0($t6) # La direccion de memoria de la cadena 't15-653bfa13-b1ae-4f4f-a4ee-7b69c71155f6' se carga en $t6
+addi $t6, $fp, 36 # La direccion del stack de la variable 't15-0a86bfa9-4c35-46c8-b1f4-36db7a2d9d4a' se carga en $t6
+sw $s1, 0($t6) # Almacenar la direccion de memoria de la cadena 't15-0a86bfa9-4c35-46c8-b1f4-36db7a2d9d4a' en el stack
+lw $t6, 0($t6) # La direccion de memoria de la cadena 't15-0a86bfa9-4c35-46c8-b1f4-36db7a2d9d4a' se carga en $t6
 move $s0, $t4 # Direccion de la cadena a copiar
 move $s3, $t6 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -627,13 +627,13 @@ jal copy_string # Concatenar cadenas
 move $s0, $t5 # Direccion de la cadena a copiar
 move $s3, $t6 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
-lw $t0, 36($fp) # Cargar la dirección en el stack de la variable "t15-653bfa13-b1ae-4f4f-a4ee-7b69c71155f6"
+lw $t0, 36($fp) # Cargar la dirección en el stack de la variable "t15-0a86bfa9-4c35-46c8-b1f4-36db7a2d9d4a"
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t0  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $v0, 24($fp)  # Leer el valor de retorno desde la ultima posicion
 addi $sp, $sp, 36     # Limpiar espacio de variables locales
 lw $fp, 4($sp)        # Restaurar $fp
@@ -654,25 +654,25 @@ sw $a3, 20($fp) # Guardar el valor de la variable 'nota3' en el stack
 lw $t0, 12($fp) # Obtener el valor de la variable "nota1" del stack
 lw $t1, 16($fp) # Obtener el valor de la variable "nota2" del stack
 add $t2, $t0, $t1 # Sumar los valores de nota1 y nota2
-sw $t2, 24($fp) # Almacenar el resultado de la suma en t16-4f91cf82-36ce-4a34-a245-c5fae9e55ecf
-lw $t2, 24($fp) # Obtener el valor de la variable "t16-4f91cf82-36ce-4a34-a245-c5fae9e55ecf" del stack
+sw $t2, 24($fp) # Almacenar el resultado de la suma en t16-286afe87-6c1f-4511-8ddc-c0630ed51b64
+lw $t2, 24($fp) # Obtener el valor de la variable "t16-286afe87-6c1f-4511-8ddc-c0630ed51b64" del stack
 lw $t3, 20($fp) # Obtener el valor de la variable "nota3" del stack
-add $t4, $t2, $t3 # Sumar los valores de t16-4f91cf82-36ce-4a34-a245-c5fae9e55ecf y nota3
-sw $t4, 28($fp) # Almacenar el resultado de la suma en t17-ff80b68a-2254-4094-a55c-760c4a6bd7bd
+add $t4, $t2, $t3 # Sumar los valores de t16-286afe87-6c1f-4511-8ddc-c0630ed51b64 y nota3
+sw $t4, 28($fp) # Almacenar el resultado de la suma en t17-3b6b4343-529f-4715-b413-93bae2974ae7
 li $t5, 3
-sw $t5, 32($fp) # guardar el valor de la variable 't18-590e16bd-ae15-4a71-a742-98efd7c12a37' en el stack
-lw $t4, 28($fp) # Obtener el valor de la variable "t17-ff80b68a-2254-4094-a55c-760c4a6bd7bd" del stack
-lw $t6, 32($fp) # Obtener el valor de la variable "t18-590e16bd-ae15-4a71-a742-98efd7c12a37" del stack
-div $t4, $t6 # Dividir los valores de t17-ff80b68a-2254-4094-a55c-760c4a6bd7bd y t18-590e16bd-ae15-4a71-a742-98efd7c12a37
-mflo $t7 # Obtener el cociente de la división
-sw $t7, 36($fp) # Almacenar el resultado de la multiplicación en t19-e4103fe6-f2b1-4715-b71c-22058fca286e
-lw $t7, 36($fp) # Obtener el valor de la variable "t19-e4103fe6-f2b1-4715-b71c-22058fca286e" del stack
+sw $t5, 32($fp) # guardar el valor de la variable 't18-d2d5cf67-a7dc-467d-9db5-d27cb2e079fd' en el stack
+lw $t4, 28($fp) # Obtener el valor de la variable "t17-3b6b4343-529f-4715-b413-93bae2974ae7" del stack
+lw $t6, 32($fp) # Obtener el valor de la variable "t18-d2d5cf67-a7dc-467d-9db5-d27cb2e079fd" del stack
+div $t4, $t6 # Dividir los valores de t17-3b6b4343-529f-4715-b413-93bae2974ae7 y t18-d2d5cf67-a7dc-467d-9db5-d27cb2e079fd
+mflo $t7 # Obtener el cociente de la division
+sw $t7, 36($fp) # Almacenar el resultado de la division en t19-256620ec-10e0-437f-b261-667db4602a0a
+lw $t7, 36($fp) # Obtener el valor de la variable "t19-256620ec-10e0-437f-b261-667db4602a0a" del stack
 sw $t7, 40($fp) # guardar el valor de la variable 'promedio' en el stack
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t0, $fp, 44 # La direccion del stack de la variable 't20-ceff61f3-a679-4f63-b886-9ed0bb265d1a' se carga en $t0
-sw $s1, 0($t0) # Almacenar la direccion de memoria de la cadena 't20-ceff61f3-a679-4f63-b886-9ed0bb265d1a' en el stack
-lw $t0, 0($t0) # La direccion de memoria de la cadena 't20-ceff61f3-a679-4f63-b886-9ed0bb265d1a' se carga en $t0
+addi $t0, $fp, 44 # La direccion del stack de la variable 't20-3370dfec-e291-4828-80bd-10eece5f7b7a' se carga en $t0
+sw $s1, 0($t0) # Almacenar la direccion de memoria de la cadena 't20-3370dfec-e291-4828-80bd-10eece5f7b7a' en el stack
+lw $t0, 0($t0) # La direccion de memoria de la cadena 't20-3370dfec-e291-4828-80bd-10eece5f7b7a' se carga en $t0
 li $t1, 69  # Cargar ASCII del caracter "E" en $t1
 sb $t1, 0($t0)  # Guardar el caracter en la direccion 0(44)
 li $t1, 108  # Cargar ASCII del caracter "l" en $t1
@@ -707,14 +707,14 @@ li $t1, 0  # Terminador nulo
 sb $t1, 15($t0) # Guardar terminador nulo
 lw $t2, 8($fp) # Obtener el valor de la variable "self" del stack
 lw $t2, 0($t2) # Obtener el valor de la propiedad 0 de la variable "self" del heap
-sw $t2, 48($fp) # guardar el valor de la variable 't21-5638ea57-3700-42c9-bf97-e1c629955280' en el stack
-lw $t3, 44($fp) # La direccion del heap de la variable 't20-ceff61f3-a679-4f63-b886-9ed0bb265d1a' se carga en $t3
-lw $t4, 48($fp) # La direccion del heap de la variable 't21-5638ea57-3700-42c9-bf97-e1c629955280' se carga en $t4
+sw $t2, 48($fp) # guardar el valor de la variable 't21-6f0d9621-c931-417e-a2b6-3a391218b942' en el stack
+lw $t3, 44($fp) # La direccion del heap de la variable 't20-3370dfec-e291-4828-80bd-10eece5f7b7a' se carga en $t3
+lw $t4, 48($fp) # La direccion del heap de la variable 't21-6f0d9621-c931-417e-a2b6-3a391218b942' se carga en $t4
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t5, $fp, 52 # La direccion del stack de la variable 't22-dc6ab805-b833-4646-ae27-69f70054a0c8' se carga en $t5
-sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't22-dc6ab805-b833-4646-ae27-69f70054a0c8' en el stack
-lw $t5, 0($t5) # La direccion de memoria de la cadena 't22-dc6ab805-b833-4646-ae27-69f70054a0c8' se carga en $t5
+addi $t5, $fp, 52 # La direccion del stack de la variable 't22-92b4ab81-ce31-4360-b21c-b37c02f2ca6a' se carga en $t5
+sw $s1, 0($t5) # Almacenar la direccion de memoria de la cadena 't22-92b4ab81-ce31-4360-b21c-b37c02f2ca6a' en el stack
+lw $t5, 0($t5) # La direccion de memoria de la cadena 't22-92b4ab81-ce31-4360-b21c-b37c02f2ca6a' se carga en $t5
 move $s0, $t3 # Direccion de la cadena a copiar
 move $s3, $t5 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -724,9 +724,9 @@ move $s3, $t5 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t6, $fp, 56 # La direccion del stack de la variable 't23-8d6547e3-de42-4d02-8b45-a8fc611642be' se carga en $t6
-sw $s1, 0($t6) # Almacenar la direccion de memoria de la cadena 't23-8d6547e3-de42-4d02-8b45-a8fc611642be' en el stack
-lw $t6, 0($t6) # La direccion de memoria de la cadena 't23-8d6547e3-de42-4d02-8b45-a8fc611642be' se carga en $t6
+addi $t6, $fp, 56 # La direccion del stack de la variable 't23-97f68b41-e94e-47ee-845e-d8618b3d8115' se carga en $t6
+sw $s1, 0($t6) # Almacenar la direccion de memoria de la cadena 't23-97f68b41-e94e-47ee-845e-d8618b3d8115' en el stack
+lw $t6, 0($t6) # La direccion de memoria de la cadena 't23-97f68b41-e94e-47ee-845e-d8618b3d8115' se carga en $t6
 li $t7, 32  # Cargar ASCII del caracter " " en $t7
 sb $t7, 0($t6)  # Guardar el caracter en la direccion 0(56)
 li $t7, 101  # Cargar ASCII del caracter "e" en $t7
@@ -739,13 +739,13 @@ li $t7, 32  # Cargar ASCII del caracter " " en $t7
 sb $t7, 4($t6)  # Guardar el caracter en la direccion 4(56)
 li $t7, 0  # Terminador nulo
 sb $t7, 5($t6) # Guardar terminador nulo
-lw $t0, 52($fp) # La direccion del heap de la variable 't22-dc6ab805-b833-4646-ae27-69f70054a0c8' se carga en $t0
-lw $t1, 56($fp) # La direccion del heap de la variable 't23-8d6547e3-de42-4d02-8b45-a8fc611642be' se carga en $t1
+lw $t0, 52($fp) # La direccion del heap de la variable 't22-92b4ab81-ce31-4360-b21c-b37c02f2ca6a' se carga en $t0
+lw $t1, 56($fp) # La direccion del heap de la variable 't23-97f68b41-e94e-47ee-845e-d8618b3d8115' se carga en $t1
 li $s0, 255 # Tamano de la cadena a copiar
 jal alloc_memory # Reservar espacio en el heap para la cadena
-addi $t2, $fp, 60 # La direccion del stack de la variable 't24-21fadd49-f43a-436b-8944-ca5d81babf44' se carga en $t2
-sw $s1, 0($t2) # Almacenar la direccion de memoria de la cadena 't24-21fadd49-f43a-436b-8944-ca5d81babf44' en el stack
-lw $t2, 0($t2) # La direccion de memoria de la cadena 't24-21fadd49-f43a-436b-8944-ca5d81babf44' se carga en $t2
+addi $t2, $fp, 60 # La direccion del stack de la variable 't24-08aeba5a-b3dc-4501-a5ac-b5fa3fd9f7b4' se carga en $t2
+sw $s1, 0($t2) # Almacenar la direccion de memoria de la cadena 't24-08aeba5a-b3dc-4501-a5ac-b5fa3fd9f7b4' en el stack
+lw $t2, 0($t2) # La direccion de memoria de la cadena 't24-08aeba5a-b3dc-4501-a5ac-b5fa3fd9f7b4' se carga en $t2
 move $s0, $t0 # Direccion de la cadena a copiar
 move $s3, $t2 # Direccion de la cadena destino
 li $s1, 0 # Offset inicial para la copia
@@ -753,20 +753,20 @@ jal copy_string # Concatenar cadenas
 move $s0, $t1 # Direccion de la cadena a copiar
 move $s3, $t2 # Direccion de la cadena destino
 jal copy_string # Concatenar cadenas
-lw $t3, 60($fp) # Cargar la dirección en el stack de la variable "t24-21fadd49-f43a-436b-8944-ca5d81babf44"
+lw $t3, 60($fp) # Cargar la dirección en el stack de la variable "t24-08aeba5a-b3dc-4501-a5ac-b5fa3fd9f7b4"
 li $v0, 4       # Codigo de syscall para imprimir cadenas
 move $a0, $t3  # Mover el valor de la cadena al registro $a0
 syscall         # Imprimir la cadena
 la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $t4, 40($fp) # Cargar la dirección en el stack de la variable "promedio"
 li $v0, 1       # Codigo de syscall para imprimir enteros
 move $a0, $t4  # Mover el valor del entero al registro $a0
 syscall         # Imprimir el valor en $a0
-la $a0, newline # Cargar la dirección de la cadena '\n'
-li $v0, 4       # Código de syscall para imprimir cadenas
-syscall         # Imprimir salto de línea
+la $a0, newline # Cargar la direccion de la cadena '\n'
+li $v0, 4       # Codigo de syscall para imprimir cadenas
+syscall         # Imprimir salto de linea
 lw $v0, 48($fp)  # Leer el valor de retorno desde la ultima posicion
 addi $sp, $sp, 60     # Limpiar espacio de variables locales
 lw $fp, 4($sp)        # Restaurar $fp
@@ -797,7 +797,7 @@ copy_string:
 copy_loop:
 lb $s2, 0($s0)    # Leer caracter de la cadena fuente
 beqz $s2, end_copy # Si el caracter es nulo, terminar
-add $s4, $s3, $s1 # Calcular la dirección efectiva
+add $s4, $s3, $s1 # Calcular la direccion efectiva
 sb $s2, 0($s4)    # Escribir el caracter en la cadena destino
 addi $s0, $s0, 1  # Avanzar en la cadena fuente
 addi $s1, $s1, 1  # Avanzar en la cadena destino

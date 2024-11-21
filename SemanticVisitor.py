@@ -622,7 +622,6 @@ class SemanticVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
-        print('Visita al nodo de bloque')
         self.symbol_table.enter_scope()
         result = self.visitChildren(ctx)
         if self.symbol_table.in_function_scope():
@@ -1658,8 +1657,6 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.IDENTIFIER(): # Si es un identificador
             var_name = ctx.IDENTIFIER().getText()
             symbol = self.symbol_table.lookup(var_name)
-            
-            print(f'{var_name}: Lo reconoce como identificador')
             
             if symbol:
                 value = symbol

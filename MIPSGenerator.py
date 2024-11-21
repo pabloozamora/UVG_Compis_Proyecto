@@ -453,7 +453,7 @@ class MIPSGenerator:
             file.write(f"copy_loop:\n")
             file.write(f"lb $s2, 0($s0)    # Leer caracter de la cadena fuente\n")
             file.write(f"beqz $s2, end_copy # Si el caracter es nulo, terminar\n")
-            file.write(f"add $s4, $s3, $s1 # Calcular la dirección efectiva\n")
+            file.write(f"add $s4, $s3, $s1 # Calcular la direccion efectiva\n")
             file.write(f"sb $s2, 0($s4)    # Escribir el caracter en la cadena destino\n")
             file.write(f"addi $s0, $s0, 1  # Avanzar en la cadena fuente\n")
             file.write(f"addi $s1, $s1, 1  # Avanzar en la cadena destino\n")
@@ -463,7 +463,6 @@ class MIPSGenerator:
         
     def generate(self):
         for i, instruction in enumerate(self.intermediate_code):
-            print('Instruction:', instruction)
             if isinstance(instruction, ThreeAddressInstruction):
                 if instruction.op == '=':
                     self.assign(instruction)
@@ -906,7 +905,7 @@ class MIPSGenerator:
         
         if dest.scope == 'SP':
             # Almacenar el resultado en el stack de la variable destino
-            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la multiplicación en {dest.name}")
+            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la multiplicacion en {dest.name}")
             return
 
         # Verificar que ya se tenga una dirección asignada para la variable destino
@@ -941,7 +940,7 @@ class MIPSGenerator:
         if dest.scope == 'SP':
             
             # Almacenar el valor en la dirección del stack de la variable destino
-            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la suma a la posicion del stack de {dest.name}")
+            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la division a la posicion del stack de {dest.name}")
             
             return
         
@@ -971,11 +970,11 @@ class MIPSGenerator:
         # Realizar la multiplicación de enteros
         self.add_code(f"div ${arg1_reg}, ${arg2_reg} # Dividir los valores de {instruction.arg1.name} y {instruction.arg2.name}")
         
-        self.add_code(f"mflo ${dest_reg} # Obtener el cociente de la división")
+        self.add_code(f"mflo ${dest_reg} # Obtener el cociente de la division")
         
         if dest.scope == 'SP':
             # Almacenar el resultado en el stack de la variable destino
-            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la multiplicación en {dest.name}")
+            self.add_code(f"sw ${dest_reg}, {dest.offset + 8}($fp) # Almacenar el resultado de la division en {dest.name}")
             return
 
         # Verificar que ya se tenga una dirección asignada para la variable destino
@@ -1046,8 +1045,8 @@ class MIPSGenerator:
             
             # Imprimir salto de línea
             self.add_code(f"la $a0, newline # Cargar la dirección de la cadena '\\n'")
-            self.add_code("li $v0, 4       # Código de syscall para imprimir cadenas")
-            self.add_code("syscall         # Imprimir salto de línea")
+            self.add_code("li $v0, 4       # Codigo de syscall para imprimir cadenas")
+            self.add_code("syscall         # Imprimir salto de linea")
             
             return
         
@@ -1058,9 +1057,9 @@ class MIPSGenerator:
         self.add_code("syscall         # Imprimir el valor en $a0")
         
         # Imprimir salto de línea
-        self.add_code(f"la $a0, newline # Cargar la dirección de la cadena '\\n'")
-        self.add_code("li $v0, 4       # Código de syscall para imprimir cadenas")
-        self.add_code("syscall         # Imprimir salto de línea")
+        self.add_code(f"la $a0, newline # Cargar la direccion de la cadena '\\n'")
+        self.add_code("li $v0, 4       # Codigo de syscall para imprimir cadenas")
+        self.add_code("syscall         # Imprimir salto de linea")
 
             
     def label(self, instruction):
@@ -1218,7 +1217,6 @@ class MIPSGenerator:
         self.add_code("jr $ra                # Retornar al llamador")
         
     def end_function(self, instruction):
-        print(self.return_symbol)
         self.in_subroutine = False
         self.subroutine_label = None
         self.current_function_max_offset = 0
