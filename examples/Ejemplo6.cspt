@@ -2,22 +2,27 @@ class CajaRegistradora {
   init(impuesto) {
     this.impuesto = impuesto;
     this.total = 0;
+    return;
   }
 
   agregarProducto(precio) {
     this.total = this.total + precio;
-    print "Producto añadido con precio: " + precio;
+    print "Producto anadido con precio:";
+    print precio;
+    return;
   }
 
   calcularTotalConImpuesto() {
     var totalConImpuesto = this.total + (this.total * this.impuesto / 100);
-    print "El total con impuesto es: " + totalConImpuesto;
+    print "El total con impuesto es:";
+    print totalConImpuesto;
     return totalConImpuesto;
   }
 
   reiniciar() {
     this.total = 0;
-    print "La caja registradora se ha reiniciado.";
+    print "La caja registradora se ha reiniciado";
+    return;
   }
 }
 
@@ -26,5 +31,12 @@ var caja = new CajaRegistradora(12);
 caja.agregarProducto(100);
 caja.agregarProducto(50);
 caja.agregarProducto(25);
+
+print "El total sin impuesto es:";
+print caja.total;
+
 caja.calcularTotalConImpuesto();
 caja.reiniciar();
+
+print "Ahora el total es:";
+print caja.total;

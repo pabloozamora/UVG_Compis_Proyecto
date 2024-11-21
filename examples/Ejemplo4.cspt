@@ -37,4 +37,5 @@ class Busqueda {
 var buscador = new Busqueda();
 var objetivo = 7;
 var indice = buscador.busquedaBinaria(0, 6, objetivo);
-print "El elemento " + objetivo + " está en el índice: " + indice;
+print "El elemento esta en el índice: ";
+print indice;

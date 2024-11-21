@@ -1,20 +1,24 @@
 class ThreeAddressInstruction:
-    def __init__(self, op, dest=None, arg1=None, arg2=None, next=None, offset=None, argOffset=None):
+    def __init__(self, op, dest=None, arg1=None, arg2=None, next=None, offset=None, argOffset=None, return_value=False):
         self.op = op  # Operación, como ADD, SUB, etc.
         self.dest = dest  # Variable o registro de destino
         self.arg1 = arg1  # Primer operando (puede ser None para operaciones unarias)
         self.arg2 = arg2  # Segundo operando (puede ser None si no se usa)
         self.offset = offset  # Offset para desplazamiento en el heap
         self.argOffset = argOffset  # Offset para desplazamiento en el heap
+        self.return_value = return_value  # Indica si la instrucción es de retorno
 
     def __str__(self):
         # Representación en formato de tres direcciones
         return f"{self.dest}{'[' + str(self.offset) + ']' if self.offset is not None else ''} = {self.arg1} {self.op} {self.arg2}" if self.arg2 else f"{self.dest}{'[' + str(self.offset) + ']' if self.offset is not None else ''} {self.op} {self.arg1}{'[' + str(self.argOffset) + ']' if self.argOffset is not None else ''}"
     
 class Label:
-    def __init__(self, name, func=False):
+    def __init__(self, name, func=False, params=None, function=None, function_name=None):
         self.name = name
         self.func = func
+        self.params = params
+        self.function = function
+        self.function_name = function_name
         
     def __str__(self):
         return f"{self.name}:"
@@ -96,14 +100,22 @@ class InputStringInstruction:
     def __str__(self):
         return f"INPUTSTRING {self.dest}, {self.charNum}"
     
+class EndFunctionInstruction:
+    def __init__(self, function_name, max_offset):
+        self.function_name = function_name
+        self.max_offset = max_offset
+    
+    def __str__(self):
+        return f"endfunc {self.function_name}, {self.max_offset}"
+    
 class IntermediateCodeGenerator:
     def __init__(self):
         self.instructions = []
         self.label_count = 0
         self.labels = []
         
-    def add_instruction(self, op, dest=None, arg1=None, arg2=None, result=None, offset=None, argOffset=None):
-        instruction = ThreeAddressInstruction(op, dest, arg1, arg2, result, offset=offset, argOffset=argOffset)
+    def add_instruction(self, op, dest=None, arg1=None, arg2=None, result=None, offset=None, argOffset=None, return_value=False):
+        instruction = ThreeAddressInstruction(op, dest, arg1, arg2, result, offset=offset, argOffset=argOffset, return_value=return_value)
         self.instructions.append(instruction)
         
     def add_jump_instruction(self, label, arg1=None, arg2=None, op=None):
@@ -151,8 +163,12 @@ class IntermediateCodeGenerator:
             self.label_count += 1
             return f"L{self.label_count}"
     
-    def add_label(self, label, func=False):
-        self.instructions.append(Label(label, func))
+    def add_label(self, label, func=False, params=None, function=None, function_name=None):
+        self.instructions.append(Label(label, func, params, function, function_name=function_name))
+        
+    def add_endfunc_instruction(self, function_name=None, max_offset=None):
+        instruction = EndFunctionInstruction(function_name=function_name, max_offset=max_offset)
+        self.instructions.append(instruction)
         
     def __str__(self):
         return "\n".join(str(instruction) for instruction in self.instructions)

@@ -1,11 +1,59 @@
-fun imprimir(a) {
-    if (a > 50) {
-        print 100;
-    }
-    else {
-        print 0;
-    }
+class Persona {
+  init(nombre, edad) {
+    this.nombre = nombre;
+    this.edad = edad;
+    this.color = "rojo";
     return;
+  }
+
+  saludar() {
+    print "Hola, mi nombre es " + this.nombre;
+    return;
+  }
+
+  incrementarEdad(anos) {
+    this.edad = this.edad + anos;
+    print "Ahora tengo :";
+    print this.edad;
+    return;
+  }
 }
 
-imprimir(44);
+class Estudiante < Persona {
+  init(nombre, edad, grado) {
+    super.init(nombre, edad);
+    this.grado = grado;
+    return;
+  }
+
+  estudiar() {
+    print this.nombre + " esta estudiando en " + this.grado + " grado";
+    return;
+  }
+
+  promedioNotas(nota1, nota2, nota3) {
+    var promedio = (nota1 + nota2 + nota3) / 3;
+    print "El promedio de " + this.nombre + " es: ";
+    print promedio;
+    return;
+  }
+}
+
+var nombre = "Pablo";
+
+var juan = new Estudiante(nombre, 20, "3");
+
+juan.saludar(); // Salida: Hola mi nombre es Pablo
+
+print "Mi edad actual es: ";
+print juan.edad;
+
+juan.estudiar(); // Salida: Pablo esta estudiando en 3 grado
+juan.incrementarEdad(5);
+juan.promedioNotas(20, 30, 40);
+
+// Expresión aritmética
+var edad = juan.edad;
+var resultado = (edad * 2) + (5 - 3) / 2;
+print "Resultado de la expresion: ";
+print resultado;

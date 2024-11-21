@@ -65,11 +65,12 @@ class TempSymbol(Symbol):
 class AnyType:
     def __init__(self):
         self.name = "any"
+        self.size = 4
         
     def __repr__(self):
         return "AnyType()"        
 class NumberType:
-    def __init__(self, is_float=True):
+    def __init__(self, is_float=False):
         self.name = "number"
         self.size = 4
         self.is_float = is_float
@@ -150,12 +151,12 @@ class ClassType:
     
 class InstanceType:
     def __init__(self, class_type=None, init_arguments=None):
-        self.name = class_type.name
+        self.name = class_type.name if class_type else "instance"
         self.class_type = class_type
         self.fields = {}
         self.init_arguments = init_arguments or []
         self.current_offset = 0
-        self.size = 4
+        self.size = 255
         
     def add_field(self, name, field_type):
         self.fields[name] = {'type': field_type, 'offset': self.current_offset}

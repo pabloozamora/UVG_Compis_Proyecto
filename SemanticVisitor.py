@@ -74,6 +74,7 @@ class SemanticVisitor(CompiscriptVisitor):
         self.loop_labels = []
         self.loop_labels_false = []
         self.previousIdentifierTypeInstance = True
+        self.current_function_max_offset = 0
         
     def getResult(self):
         return self.result
@@ -486,7 +487,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 
                 # Agregar el valor de retorno a SP
                 return_temp = self.symbol_table.add_temp()
-                self.code_generator.add_instruction(op='=', dest=return_temp, arg1=return_value)
+                self.code_generator.add_instruction(op='=', dest=return_temp, arg1=return_value, return_value=True)
                 
                 # Agregar instrucción de retorno
                 self.code_generator.add_return_instruction()
@@ -621,8 +622,12 @@ class SemanticVisitor(CompiscriptVisitor):
 
     # Visit a parse tree produced by CompiscriptParser#block.
     def visitBlock(self, ctx:CompiscriptParser.BlockContext):
+        print('Visita al nodo de bloque')
         self.symbol_table.enter_scope()
         result = self.visitChildren(ctx)
+        if self.symbol_table.in_function_scope():
+            if self.symbol_table.current_scope().scope_offset > self.current_function_max_offset:
+                self.current_function_max_offset = self.symbol_table.current_scope().scope_offset
         self.symbol_table.exit_scope()
         return result
 
@@ -1062,6 +1067,7 @@ class SemanticVisitor(CompiscriptVisitor):
                     #return None, NilType(), None
                     
                     op = 'CONCAT'
+                    left_type = StringType()
                 
             elif operator == '-':
                 
@@ -1189,11 +1195,16 @@ class SemanticVisitor(CompiscriptVisitor):
             # Si la clase tiene un método init, llamarlo
             if class_symbol.type.get_method('init'):
                 
+                instruction_arguments = []
+                
                 self.code_generator.add_arg_instruction(instance_temp)
+                instruction_arguments.append(instance_temp)
+                
                 for argument in arguments:
                     self.code_generator.add_arg_instruction(argument)
+                    instruction_arguments.append(argument)
                 
-                self.code_generator.add_call_instruction(label=f'L_{class_name}_init', arguments=arguments)
+                self.code_generator.add_call_instruction(label=f'L_{class_name}_init_{len(arguments)}', arguments=instruction_arguments)
         
         return instance_temp, instance, None
 
@@ -1529,9 +1540,11 @@ class SemanticVisitor(CompiscriptVisitor):
         type = AnyType()
         var_name = None
         
+        text = ctx.getText()
+        
         if ctx.NUMBER():
             var_name = "number"
-            value = float(ctx.NUMBER().getText())
+            value = int(ctx.NUMBER().getText())
             value_temp = self.symbol_table.add_temp(type=NumberType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
@@ -1540,6 +1553,7 @@ class SemanticVisitor(CompiscriptVisitor):
         elif ctx.STRING():
             var_name = "string"
             value = ctx.STRING().getText()
+            value = value.strip('"')
             value_temp = self.symbol_table.add_temp(type=StringType())
             self.code_generator.add_instruction(op='=', dest=value_temp, arg1=value)
             value = value_temp
@@ -1642,9 +1656,10 @@ class SemanticVisitor(CompiscriptVisitor):
             var_name = f'super.{method_name}'
                 
         elif ctx.IDENTIFIER(): # Si es un identificador
-            #print('Lo reconoce como identificador')
             var_name = ctx.IDENTIFIER().getText()
             symbol = self.symbol_table.lookup(var_name)
+            
+            print(f'{var_name}: Lo reconoce como identificador')
             
             if symbol:
                 value = symbol
@@ -1686,7 +1701,7 @@ class SemanticVisitor(CompiscriptVisitor):
                 label_name = f"{current_class.type.name}_{function_name}_{paramcount}"
             
             function_label = self.code_generator.new_label(label_name)
-            self.code_generator.add_label(function_label, func=True)
+            self.code_generator.add_label(function_label, func=True, params=paramcount, function_name=function_name)
             
         # ----------------------------------------
             
@@ -1740,6 +1755,11 @@ class SemanticVisitor(CompiscriptVisitor):
             
         # Limpiar la lista de tipos de retorno para esta función
         self.return_types = set()
+        
+        # ---------------- Código intermedio ----------------
+        if not self.hasErrors:
+            self.code_generator.add_endfunc_instruction(function_name=function_name, max_offset=self.current_function_max_offset)
+            self.current_function_max_offset = 0
         
         return function_name, function_type
     
